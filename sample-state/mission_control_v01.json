@@ -1,0 +1,35 @@
+{
+  "_note": "Fictional sample priorities and decisions for Mission Control.",
+  "next_priority": {
+    "title": "Schedule engine refactor",
+    "next_action": "Finish the change and hand it to the Reviewer."
+  },
+  "priorities": [
+    {
+      "status": "ACTIVE",
+      "title": "Schedule engine refactor",
+      "owner": "IMPLEMENTER",
+      "summary": "Setpoints move to 15-minute slots.",
+      "evidence": "sample-state/jobs.json",
+      "next_action": "Independent review."
+    },
+    {
+      "status": "PENDING",
+      "title": "Idle current below 20 uA",
+      "owner": "PERFORMANCE",
+      "summary": "Radio wake-up interval is the largest cost.",
+      "evidence": "sample-state/jobs.json",
+      "next_action": "Try a longer interval."
+    }
+  ],
+  "decisions": [
+    {
+      "status": "AWAITING_OWNER_DECISION",
+      "title": "Change the default setpoint range",
+      "responsible": "Owner A and Owner B",
+      "supporting_evidence": "Customer feedback summary (sample).",
+      "reference": "DEC-ACME-01",
+      "next_action": "Approve or reject the new range."
+    }
+  ]
+}

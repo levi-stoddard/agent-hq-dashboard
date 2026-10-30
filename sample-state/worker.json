@@ -1,0 +1,7 @@
+{
+  "_note": "Fictional sample worker state read by lib/stubs/metrics_engine.cjs.",
+  "is_alive": true,
+  "status": "SAMPLE_DATA",
+  "current_agent": "IMPLEMENTER",
+  "current_task": "Schedule engine refactor (sample)"
+}

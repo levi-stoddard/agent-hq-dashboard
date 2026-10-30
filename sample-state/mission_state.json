@@ -1,0 +1,10 @@
+{
+  "mission_id": "ACME-THERMOSTAT-SAMPLE",
+  "team": "Acme Widgets (fictional)",
+  "checkpoints": [
+    {
+      "ts": "2026-10-20T17:00:00Z",
+      "summary": "Weekly checkpoint: 1 job done, 2 in progress (sample)."
+    }
+  ]
+}

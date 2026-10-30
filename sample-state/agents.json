@@ -1,0 +1,119 @@
+[
+  {
+    "id": "ORCHESTRATOR",
+    "name": "Orchestrator",
+    "role": "Engineering orchestrator",
+    "domain": "Planning, routing and coordination",
+    "room": "CTO Command Office",
+    "summary": "Plans the week, routes work to the right agent and keeps the board honest.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#F59E0B"
+    }
+  },
+  {
+    "id": "ANALYST",
+    "name": "Analyst",
+    "role": "Research and analysis agent",
+    "domain": "Sensor research and data analysis",
+    "room": "Research & Analysis Lab",
+    "summary": "Reads data sheets, compares components and writes short evidence-backed notes.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#00E5FF"
+    }
+  },
+  {
+    "id": "PERFORMANCE",
+    "name": "Performance",
+    "role": "Performance agent",
+    "domain": "Firmware size, boot time and battery budget",
+    "room": "Firmware & Performance Area",
+    "summary": "Measures each build against the size, boot-time and battery budgets.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#10B981"
+    }
+  },
+  {
+    "id": "VERIFICATION",
+    "name": "Verification",
+    "role": "Verification agent",
+    "domain": "Hardware-in-the-loop tests",
+    "room": "Firmware & Performance Area",
+    "summary": "Runs the hardware-in-the-loop rig and reports failures with logs.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#38BDF8"
+    }
+  },
+  {
+    "id": "INTEGRATION",
+    "name": "Integration",
+    "role": "Integration agent",
+    "domain": "Wi-Fi setup, app pairing and cloud sync",
+    "room": "Integration & Build Lab",
+    "summary": "Owns the path from the thermostat to the mobile app and the cloud.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#EAB308"
+    }
+  },
+  {
+    "id": "IMPLEMENTER",
+    "name": "Implementer",
+    "role": "Implementation agent",
+    "domain": "Thermostat firmware features",
+    "room": "Integration & Build Lab",
+    "summary": "Writes firmware changes in small, reviewed steps.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#F97316"
+    }
+  },
+  {
+    "id": "REQUIREMENTS",
+    "name": "Requirements",
+    "role": "Requirements agent",
+    "domain": "Requirements and traceability",
+    "room": "Learning & Quality Center",
+    "summary": "Keeps requirements traced to tests and flags gaps.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#FB923C"
+    }
+  },
+  {
+    "id": "REVIEWER",
+    "name": "Reviewer",
+    "role": "Independent review agent",
+    "domain": "Code and claim review",
+    "room": "Independent Review Room",
+    "summary": "Reviews changes on a different model family and re-runs the evidence.",
+    "default_model": "claude-sonnet",
+    "reviewer_id": "ORCHESTRATOR",
+    "avatar": {
+      "accent_color": "#A855F7"
+    }
+  },
+  {
+    "id": "QUALITY",
+    "name": "Quality",
+    "role": "Quality and lessons agent",
+    "domain": "Root causes, lessons and regression tests",
+    "room": "Learning & Quality Center",
+    "summary": "Turns each mistake into a lesson with a regression test.",
+    "default_model": "gemini-flash",
+    "reviewer_id": "REVIEWER",
+    "avatar": {
+      "accent_color": "#14B8A6"
+    }
+  }
+]

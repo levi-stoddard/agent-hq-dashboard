@@ -1,0 +1,14 @@
+{
+  "name": "agent-hq-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agent HQ: a three.js 3D headquarters view and a 2D dashboard of AI agents' workstations, served by a zero-dependency Node.js server.",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/smoke.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

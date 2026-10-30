@@ -1,0 +1,16 @@
+[
+  {
+    "lesson_id": "LSN-001",
+    "title": "Check units in sensor data sheets",
+    "root_cause_type": "ASSUMPTION",
+    "status": "VERIFIED",
+    "regression_test_file": "tests/test_sensor_units.py"
+  },
+  {
+    "lesson_id": "LSN-002",
+    "title": "Do not trust a single HIL run",
+    "root_cause_type": "PROCESS",
+    "status": "PENDING_REVIEW",
+    "regression_test_file": "tests/test_hil_repeat.py"
+  }
+]

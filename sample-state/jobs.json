@@ -1,0 +1,126 @@
+[
+  {
+    "job_id": "JOB-ACME-101",
+    "title": "Compare two humidity sensors for the next board",
+    "status": "QUEUED",
+    "assigned_agent": "ANALYST",
+    "domain": "SENSOR_RESEARCH",
+    "priority": "MEDIUM",
+    "engineering_objective": "Short note with drift, cost and supply data for both parts.",
+    "governance_classification": "ROUTINE",
+    "external_references": {},
+    "execution_evidence": {
+      "reviewer_verdict": "PENDING"
+    },
+    "progress": "Not started",
+    "created_utc": "2026-10-10T09:00:00Z"
+  },
+  {
+    "job_id": "JOB-ACME-102",
+    "title": "Cut idle current below 20 uA",
+    "status": "IN_PROGRESS",
+    "assigned_agent": "PERFORMANCE",
+    "domain": "POWER",
+    "priority": "HIGH",
+    "engineering_objective": "Bench measurement over 10 minutes shows under 20 uA average.",
+    "governance_classification": "ROUTINE",
+    "external_references": {
+      "linear": {
+        "identifier": "ACME-42"
+      }
+    },
+    "execution_evidence": {
+      "reviewer_verdict": "PENDING"
+    },
+    "progress": "About half done (sample)",
+    "created_utc": "2026-10-11T09:00:00Z"
+  },
+  {
+    "job_id": "JOB-ACME-103",
+    "title": "Schedule engine refactor",
+    "status": "IN_PROGRESS",
+    "assigned_agent": "IMPLEMENTER",
+    "domain": "FIRMWARE",
+    "priority": "HIGH",
+    "engineering_objective": "Setpoints stored in 15-minute slots; all schedule tests pass.",
+    "governance_classification": "ROUTINE",
+    "external_references": {
+      "github": {
+        "pr_number": 17
+      }
+    },
+    "execution_evidence": {
+      "reviewer_verdict": "PENDING"
+    },
+    "progress": "About half done (sample)",
+    "created_utc": "2026-10-12T09:00:00Z"
+  },
+  {
+    "job_id": "JOB-ACME-104",
+    "title": "Quarantine two flaky HIL cases",
+    "status": "COMPLETED",
+    "assigned_agent": "VERIFICATION",
+    "domain": "TESTING",
+    "priority": "LOW",
+    "engineering_objective": "Flaky cases listed with logs and excluded from the gate.",
+    "governance_classification": "ROUTINE",
+    "external_references": {},
+    "execution_evidence": {
+      "reviewer_verdict": "PASS"
+    },
+    "progress": "Done (sample)",
+    "created_utc": "2026-10-13T09:00:00Z"
+  },
+  {
+    "job_id": "JOB-ACME-105",
+    "title": "Change the default setpoint range",
+    "status": "BLOCKED",
+    "assigned_agent": "REQUIREMENTS",
+    "domain": "REQUIREMENTS",
+    "priority": "MEDIUM",
+    "engineering_objective": "Needs an owner decision: change of a product baseline.",
+    "governance_classification": "OWNER_APPROVAL",
+    "external_references": {},
+    "execution_evidence": {
+      "reviewer_verdict": "PENDING"
+    },
+    "progress": "Waiting for owners",
+    "created_utc": "2026-10-14T09:00:00Z"
+  },
+  {
+    "job_id": "JOB-ACME-106",
+    "title": "Pair the thermostat with the mobile app",
+    "status": "QUEUED",
+    "assigned_agent": "INTEGRATION",
+    "domain": "CONNECTIVITY",
+    "priority": "MEDIUM",
+    "engineering_objective": "Pairing completes in under 60 seconds on three phones.",
+    "governance_classification": "ROUTINE",
+    "external_references": {
+      "linear": {
+        "identifier": "ACME-51"
+      }
+    },
+    "execution_evidence": {
+      "reviewer_verdict": "PENDING"
+    },
+    "progress": "Not started",
+    "created_utc": "2026-10-15T09:00:00Z"
+  },
+  {
+    "job_id": "JOB-ACME-107",
+    "title": "Review the schedule engine change",
+    "status": "QUEUED",
+    "assigned_agent": "REVIEWER",
+    "domain": "REVIEW",
+    "priority": "HIGH",
+    "engineering_objective": "Independent re-run of the schedule tests and a written verdict.",
+    "governance_classification": "ROUTINE",
+    "external_references": {},
+    "execution_evidence": {
+      "reviewer_verdict": "PENDING"
+    },
+    "progress": "Not started",
+    "created_utc": "2026-10-16T09:00:00Z"
+  }
+]

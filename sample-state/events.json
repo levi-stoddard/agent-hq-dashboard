@@ -1,0 +1,23 @@
+[
+  {
+    "event_id": "EVT-S-1",
+    "timestamp": "2026-10-20T09:12:00Z",
+    "agent_id": "ORCHESTRATOR",
+    "title": "Week planned",
+    "summary": "Seven sample jobs routed to five agents."
+  },
+  {
+    "event_id": "EVT-S-2",
+    "timestamp": "2026-10-20T11:40:00Z",
+    "agent_id": "VERIFICATION",
+    "title": "HIL run finished",
+    "summary": "412 cases, 0 failures, 2 quarantined (sample)."
+  },
+  {
+    "event_id": "EVT-S-3",
+    "timestamp": "2026-10-20T15:05:00Z",
+    "agent_id": "REQUIREMENTS",
+    "title": "Owner decision requested",
+    "summary": "Default setpoint range change needs both owners."
+  }
+]

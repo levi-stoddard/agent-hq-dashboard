@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Logs and runtime output
+logs/
+*.log
+public/live_events/events.jsonl
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Backups and scratch copies
+backups/
+*.bak
+*.tmp
+*.zip
+
+# Runtime data
+data/
+state/
+*.sqlite
+*.db
+
+# Local settings
+public/hq-config.local.js

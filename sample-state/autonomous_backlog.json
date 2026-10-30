@@ -1,0 +1,44 @@
+[
+  {
+    "task_id": "JOB-ACME-101",
+    "title": "Compare two humidity sensors for the next board",
+    "assigned_agent": "ANALYST",
+    "status": "QUEUED"
+  },
+  {
+    "task_id": "JOB-ACME-102",
+    "title": "Cut idle current below 20 uA",
+    "assigned_agent": "PERFORMANCE",
+    "status": "IN_PROGRESS"
+  },
+  {
+    "task_id": "JOB-ACME-103",
+    "title": "Schedule engine refactor",
+    "assigned_agent": "IMPLEMENTER",
+    "status": "IN_PROGRESS"
+  },
+  {
+    "task_id": "JOB-ACME-104",
+    "title": "Quarantine two flaky HIL cases",
+    "assigned_agent": "VERIFICATION",
+    "status": "COMPLETED"
+  },
+  {
+    "task_id": "JOB-ACME-105",
+    "title": "Change the default setpoint range",
+    "assigned_agent": "REQUIREMENTS",
+    "status": "QUEUED"
+  },
+  {
+    "task_id": "JOB-ACME-106",
+    "title": "Pair the thermostat with the mobile app",
+    "assigned_agent": "INTEGRATION",
+    "status": "QUEUED"
+  },
+  {
+    "task_id": "JOB-ACME-107",
+    "title": "Review the schedule engine change",
+    "assigned_agent": "REVIEWER",
+    "status": "QUEUED"
+  }
+]

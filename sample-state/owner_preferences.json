@@ -1,0 +1,41 @@
+{
+  "owner_a": {
+    "name": "Owner A",
+    "topics": [
+      "firmware",
+      "releases"
+    ],
+    "alert_categories": [
+      "BLOCKED",
+      "APPROVAL_NEEDED"
+    ],
+    "delivery_methods": [
+      "dashboard"
+    ],
+    "quiet_hours": {
+      "enabled": true,
+      "start_local": "21:00",
+      "end_local": "07:00"
+    },
+    "daily_briefing": true,
+    "briefing_time_utc": "14:00"
+  },
+  "owner_b": {
+    "name": "Owner B",
+    "topics": [
+      "testing",
+      "connectivity"
+    ],
+    "alert_categories": [
+      "APPROVAL_NEEDED"
+    ],
+    "delivery_methods": [
+      "dashboard"
+    ],
+    "quiet_hours": {
+      "enabled": false
+    },
+    "daily_briefing": false,
+    "briefing_time_utc": "15:00"
+  }
+}
