@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent HQ — 3D Headquarters</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20100%20100%22><text y=%22.9em%22 font-size=%2290%22>◆</text></svg>">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body, html {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #030712; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #E2E8F0;
+    }
+
+    #canvas3d-container {
+      width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
+    }
+
+    /* Executive Glass HUD Overlay System */
+    .hud-layer {
+      position: absolute; z-index: 10; pointer-events: none;
+    }
+
+    .hud-topbar {
+      top: 0; left: 0; right: 0; height: 72px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 24px;
+      background: linear-gradient(180deg, rgba(3, 7, 18, 0.94) 0%, rgba(3, 7, 18, 0.75) 70%, transparent 100%);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.22);
+      pointer-events: auto; backdrop-filter: blur(12px);
+    }
+
+    .hud-brand { display: flex; align-items: center; gap: 14px; }
+    .hud-emblem {
+      width: 38px; height: 38px; border-radius: 8px;
+      background: radial-gradient(circle, #D4AF37 0%, #997316 100%);
+      color: #030712; font-size: 20px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 16px rgba(212, 175, 55, 0.4);
+    }
+    .hud-title-group { display: flex; flex-direction: column; }
+    .hud-title {
+      font-size: 15px; font-weight: 800; letter-spacing: 0.8px;
+      color: #F8FAFC; text-transform: uppercase; display: flex; align-items: center; gap: 8px;
+    }
+    .hud-design-badge {
+      font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.18);
+      color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 2px 8px; border-radius: 4px; letter-spacing: 0.6px;
+    }
+    .hud-subtitle { font-size: 11px; color: #94A3B8; letter-spacing: 0.3px; }
+
+    .hud-controls-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .camera-presets { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .preset-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.28);
+      color: #E2E8F0; padding: 6px 11px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(8px); display: flex; align-items: center; gap: 5px;
+    }
+    .preset-btn:hover {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: #D4AF37; color: #FFF;
+      box-shadow: 0 4px 14px rgba(212, 175, 55, 0.25);
+    }
+    .preset-btn.active {
+      background: linear-gradient(135deg, #0F2D54 0%, #1E3A8A 100%);
+      border-color: #38BDF8; color: #FFF;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+    .preset-btn.btn-action {
+      background: linear-gradient(135deg, #064E3B 0%, #047857 100%);
+      border-color: #10B981; color: #FFF;
+    }
+    .preset-btn.btn-action:hover {
+      background: #059669; box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+    }
+    .preset-btn.btn-holo {
+      background: linear-gradient(135deg, #3B0764 0%, #6B21A8 100%);
+      border-color: #A855F7; color: #FFF;
+    }
+    .preset-btn.btn-holo:hover {
+      background: #7E22CE; box-shadow: 0 0 14px rgba(168, 85, 247, 0.45);
+    }
+    .preset-btn.btn-return {
+      background: rgba(15, 23, 42, 0.7); border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    /* Roster Quick Selector Dropdown */
+    .roster-dropdown-select {
+      background: rgba(10, 16, 26, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38BDF8; font-size: 11px; font-weight: 700;
+      padding: 6px 10px; border-radius: 6px; cursor: pointer;
+      outline: none; backdrop-filter: blur(8px);
+    }
+    .roster-dropdown-select option {
+      background: #0B132B; color: #E2E8F0; font-size: 11px;
+    }
+
+    /* Environment Switcher Tabs */
+    .env-switcher { display: flex; background: rgba(10, 16, 26, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; padding: 2px; }
+    .env-btn {
+      background: none; border: none; color: #94A3B8; font-size: 11px; font-weight: 700;
+      padding: 4px 9px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+    }
+    .env-btn:hover { color: #FFF; }
+    .env-btn.active { background: rgba(56, 189, 248, 0.2); color: #38BDF8; }
+
+    /* Owner Executive Status Card */
+    .hud-executive-card {
+      bottom: 24px; left: 24px;
+      background: rgba(8, 13, 20, 0.95);
+      border: 1px solid rgba(212, 175, 55, 0.38);
+      border-radius: 10px; padding: 14px 18px; max-width: 480px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 1px rgba(212, 175, 55, 0.4);
+      backdrop-filter: blur(14px); pointer-events: auto;
+    }
+    .exec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .exec-tag {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+      color: #D4AF37; text-transform: uppercase;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .exec-tag::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%;
+      background: #D4AF37; box-shadow: 0 0 8px #D4AF37;
+    }
+    .exec-desc { font-size: 12px; color: #CBD5E1; line-height: 1.45; margin-bottom: 10px; }
+    .exec-meta-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05); font-size: 11px;
+    }
+    .exec-meta-item { display: flex; flex-direction: column; }
+    .exec-meta-label { font-size: 9px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.4px; }
+    .exec-meta-val { font-weight: 700; color: #F8FAFC; }
+
+    /* Live Telemetry Panel (Right Side HUD) */
+    .hud-telemetry-box {
+      top: 82px; right: 24px;
+      background: rgba(8, 13, 20, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 10px; padding: 14px 16px; width: 340px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(14px); pointer-events: auto;
+    }
+    .tele-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .tele-title { font-size: 11px; font-weight: 800; color: #38BDF8; letter-spacing: 0.6px; text-transform: uppercase; }
+    .tele-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+    .tele-agent { font-size: 13px; font-weight: 700; color: #F8FAFC; margin-bottom: 2px; }
+    .tele-room { font-size: 11px; color: #94A3B8; margin-bottom: 8px; }
+    .tele-log {
+      background: #05080E; border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 8px 10px; border-radius: 6px; font-size: 11px; font-family: monospace;
+      color: #CBD5E1; line-height: 1.45;
+    }
+
+    /* Diagnostics Bar */
+    .hud-diagnostics-bar {
+      bottom: 24px; right: 24px;
+      background: rgba(8, 13, 20, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px; padding: 7px 14px; font-size: 10px; color: #94A3B8;
+      font-family: monospace; backdrop-filter: blur(8px); pointer-events: auto;
+    }
+
+    /* Activity Status Banner (Top Center) */
+    #hud-activity-banner {
+      display: block;
+      top: 82px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94); border: 1.5px solid #38BDF8;
+      color: #FFF; padding: 8px 20px; border-radius: 8px; font-size: 12px;
+      font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      backdrop-filter: blur(12px); pointer-events: auto; text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    /* Owner Executive Agent Drawer */
+    #owner-agent-drawer {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 440px;
+      background: rgba(8, 13, 20, 0.97);
+      border-left: 1px solid rgba(212, 175, 55, 0.35);
+      z-index: 100; display: none; flex-direction: column;
+      box-shadow: -15px 0 45px rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(20px); pointer-events: auto;
+    }
+    .drawer-header {
+      padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .drawer-title-group { display: flex; align-items: center; gap: 12px; }
+    .drawer-avatar-badge {
+      width: 44px; height: 44px; border-radius: 8px;
+      background: #0A192F; border: 1.5px solid #38BDF8;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800;
+    }
+    .drawer-name { font-size: 17px; font-weight: 800; color: #F8FAFC; letter-spacing: 0.5px; }
+    .drawer-role { font-size: 11px; color: #94A3B8; }
+    .btn-close-drawer {
+      background: none; border: none; color: #94A3B8; font-size: 24px;
+      cursor: pointer; line-height: 1; padding: 4px;
+    }
+    .btn-close-drawer:hover { color: #FFF; }
+    .drawer-content { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+    .drawer-card {
+      background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px; padding: 14px 16px; font-size: 12px;
+    }
+    .drawer-card-title {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #D4AF37; margin-bottom: 8px; display: flex; justify-content: space-between;
+    }
+    .drawer-meta-line { display: flex; justify-content: space-between; margin-bottom: 6px; color: #CBD5E1; }
+    .drawer-meta-line strong { color: #F8FAFC; }
+    .drawer-log-box {
+      background: #05080E; border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px;
+      color: #94A3B8; line-height: 1.5;
+    }
+    .task-form input, .task-form select {
+      width: 100%; background: #05080E; border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px; color: #F8FAFC; padding: 8px 10px; font-size: 11px; margin-top: 4px; margin-bottom: 8px;
+    }
+
+    /* Orchestrator's Command Board Operational Surface Modal (Level 3 Interface) */
+    #mission-control-overlay {
+      position: absolute; inset: 0; background: rgba(6, 9, 14, 0.94);
+      z-index: 100; display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(16px); pointer-events: auto;
+    }
+    .mission-card {
+      background: #0A111E; border: 1.5px solid #D4AF37; border-radius: 12px;
+      width: 94%; max-width: 1200px; height: 88vh; display: flex; flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85); overflow: hidden;
+    }
+    .mission-header {
+      padding: 16px 24px; border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .mission-title { font-size: 16px; font-weight: 800; color: #F8FAFC; letter-spacing: 0.6px; display: flex; align-items: center; gap: 10px; }
+    .mission-subtitle { font-size: 11px; color: #94A3B8; font-weight: normal; }
+    .mission-body { padding: 20px 24px; overflow-y: auto; flex: 1; display: grid; grid-template-columns: 1.3fr 1.7fr; gap: 24px; }
+
+    .job-list-card {
+      background: #060B12; border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 12px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    }
+    .job-list-card:hover { border-color: #38BDF8; background: #081424; }
+    .job-list-card.selected { border-color: #D4AF37; background: #121A2A; box-shadow: 0 0 12px rgba(212, 175, 55, 0.2); }
+
+    .job-detail-container {
+      background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .owner-action-btn-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+    }
+    .owner-action-btn {
+      padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #0F172A; color: #E2E8F0; transition: all 0.2s;
+    }
+    .owner-action-btn:hover { background: #1E293B; border-color: #38BDF8; color: #FFF; }
+    .owner-action-btn.btn-rec { border-color: #D4AF37; color: #D4AF37; background: rgba(212, 175, 55, 0.1); }
+    .owner-action-btn.btn-rec:hover { background: #D4AF37; color: #000; }
+    .owner-action-btn.btn-approve { border-color: #10B981; color: #10B981; background: rgba(16, 185, 129, 0.1); }
+    .owner-action-btn.btn-approve:hover { background: #10B981; color: #000; }
+    .owner-action-btn.btn-hold { border-color: #F59E0B; color: #F59E0B; background: rgba(245, 158, 11, 0.1); }
+    .owner-action-btn.btn-hold:hover { background: #F59E0B; color: #000; }
+    .owner-action-btn.btn-reject { border-color: #EF4444; color: #EF4444; background: rgba(239, 68, 68, 0.1); }
+    .owner-action-btn.btn-reject:hover { background: #EF4444; color: #FFF; }
+
+    /* Error Diagnostics Panel */
+    #error-diagnostic-panel {
+      position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(185, 28, 28, 0.95); border: 2px solid #F87171;
+      border-radius: 8px; padding: 16px 24px; max-width: 600px;
+      z-index: 999; display: none; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+      font-size: 12px; color: #FFF;
+    }
+
+    /* Owner Monitor Interactive Tooltip */
+    #owner-monitor-tooltip {
+      position: fixed;
+      display: none;
+      pointer-events: none;
+      z-index: 10000;
+      background: rgba(10, 16, 26, 0.95);
+      border: 1px solid #D4AF37;
+      border-radius: 8px;
+      padding: 8px 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.25);
+      backdrop-filter: blur(10px);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transform: translate(14px, 14px);
+      transition: opacity 0.15s ease;
+    }
+    #owner-monitor-tooltip .f-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #owner-monitor-tooltip .f-sub {
+      font-size: 10px;
+      color: #94A3B8;
+      margin-top: 3px;
+      font-family: monospace;
+    }
+
+    /* Owner Connection Toast */
+    #owner-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid #38BDF8;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #F8FAFC;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+    }
+
+    /* Status Board Offline Diagnostic Modal */
+    #status-board-offline-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 8, 14, 0.85);
+      backdrop-filter: blur(10px);
+      z-index: 10001;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .owner-modal-card {
+      background: #0B111B;
+      border: 1.5px solid #EF4444;
+      border-radius: 12px;
+      padding: 24px 28px;
+      max-width: 520px;
+      width: 90%;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 25px rgba(239, 68, 68, 0.2);
+      color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .owner-modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #EF4444;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .owner-modal-body {
+      font-size: 12px;
+      line-height: 1.6;
+      color: #CBD5E1;
+      margin-bottom: 18px;
+    }
+    .owner-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .owner-modal-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .owner-modal-btn-close {
+      background: #1E293B;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94A3B8;
+    }
+    .owner-modal-btn-close:hover { background: #334155; color: #FFF; }
+    .owner-modal-btn-retry {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38BDF8;
+      color: #38BDF8;
+    }
+    .owner-modal-btn-retry:hover { background: #38BDF8; color: #000; }
+  </style>
+</head>
+<body>
+  <div id="canvas3d-container"></div>
+
+  <!-- Global Error Diagnostic Trap -->
+  <div id="error-diagnostic-panel">
+    <div style="font-weight: 800; margin-bottom: 4px;">⚠️ 3D ENVIRONMENT DIAGNOSTIC TRAP</div>
+    <div id="error-diagnostic-text"></div>
+  </div>
+
+  <!-- Top Navigation & Executive HUD -->
+  <div class="hud-layer hud-topbar">
+    <div class="hud-brand">
+      <div class="hud-emblem">A</div>
+      <div class="hud-title-group">
+        <div class="hud-title">
+          Agent HQ
+          <span class="hud-design-badge">3D HEADQUARTERS</span>
+        </div>
+        <div class="hud-subtitle">Acme Widgets AI engineering team (fictional sample data)</div>
+      </div>
+    </div>
+
+    <!-- Controls & Presets -->
+    <div class="hud-controls-group">
+      <!-- Dynamic Environment Switcher -->
+      <div class="env-switcher">
+        <button class="env-btn active" id="btn-env-sunset">🌅 Sunset</button>
+        <button class="env-btn" id="btn-env-daylight">☀️ Daylight</button>
+        <button class="env-btn" id="btn-env-midnight">🌙 Midnight</button>
+      </div>
+
+      <!-- Activity State Switcher -->
+      <div class="camera-presets">
+        <button class="preset-btn active" id="btn-mode-desk">💻 Desk Work</button>
+        <button class="preset-btn" id="btn-mode-board">📋 Board Review</button>
+        <button class="preset-btn" id="btn-mode-briefing">🗣️ Owner Briefing</button>
+      </div>
+
+      <!-- Engineer Fast Jump Selector -->
+      <select class="roster-dropdown-select" id="select-agent-jump">
+        <option value="" disabled selected>🎯 Jump to Specialist...</option>
+        <option value="orchestrator">👑 Orchestrator (coordination)</option>
+        <option value="analyst">🔬 Analyst (research and analysis)</option>
+        <option value="performance">⚡ Performance (size, boot time, battery)</option>
+        <option value="verification">🧪 Verification (hardware-in-the-loop tests)</option>
+        <option value="integration">📡 Integration (Wi-Fi, app, cloud)</option>
+        <option value="implementer">🔥 Implementer (firmware features)</option>
+        <option value="requirements">🛡️ Requirements (traceability)</option>
+        <option value="quality">📜 Quality (lessons and regressions)</option>
+        <option value="reviewer">🎯 Reviewer (independent review)</option>
+      </select>
+
+      <!-- Camera Presets with Comfortable Framing -->
+      <div class="camera-presets">
+        <button class="preset-btn active" id="btn-cam-overview">🔭 Overview</button>
+        <button class="preset-btn" id="btn-cam-owner">◆ Owner Dais</button>
+        <button class="preset-btn btn-holo" id="btn-cam-holo-table">✨ Briefing Table</button>
+        <button class="preset-btn" id="btn-cam-board">🏛️ Command Board</button>
+        <button class="preset-btn" id="btn-cam-claude" style="border-color: #F5A623;">🤖 Claude</button>
+        <button class="preset-btn" id="btn-cam-gemini" style="border-color: #2F8BFF;">🤖 Gemini</button>
+        <button class="preset-btn" id="btn-cam-engineer" style="border-color: #F59E0B;">👤 Focus Engineer</button>
+        <button class="preset-btn" id="btn-open-mission-control" style="border-color: #38BDF8;">📊 Mission Control</button>
+        <a href="/" class="preset-btn btn-return" style="text-decoration: none;">&larr; 2D HQ</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity State Banner -->
+  <div class="hud-layer" id="hud-activity-banner">
+    💻 DESK VIEW • 9 SPECIALIST STATIONS • LIVE HEALTH ON EACH NAME TAG
+  </div>
+
+  <!-- Live Telemetry Box (Right HUD) -->
+  <div class="hud-layer hud-telemetry-box">
+    <div class="tele-header">
+      <span class="tele-title">Active AI Specialist</span>
+      <span id="agent-hud-badge" class="tele-badge" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8;">ONLINE_ACTIVE</span>
+    </div>
+    <div class="tele-agent" id="agent-hud-name">ORCHESTRATOR &bull; CTO &amp; Engineering Orchestrator</div>
+    <div class="tele-room" id="agent-hud-room">Station: Radial Workstation (CTO COMMAND PLANE)</div>
+    <div class="tele-log" id="agent-hud-action">
+      &gt; Architecture: Radial Perimeter Geometry Aligned<br>
+      &gt; Central Table: Product Hologram (fictional thermostat)<br>
+      &gt; Command Board: Orchestrator's Direct Operational Surface<br>
+      &gt; Click any specialist to inspect Executive Dossier
+    </div>
+  </div>
+
+  <!-- Owner Executive Status Card (Bottom Left) -->
+  <div class="hud-layer hud-executive-card">
+    <div class="exec-header">
+      <div class="exec-tag">Owner Executive Command Platform</div>
+      <span style="font-size: 10px; color: #94A3B8;">Two-owner approval</span>
+    </div>
+    <p class="exec-desc">
+      <strong>3D AI Headquarters:</strong> 9 radially aligned specialist workstations, a shared owner dais, a central briefing table with a product hologram, and the orchestrator's Command Board wall.
+    </p>
+    <div class="exec-meta-grid">
+      <div class="exec-meta-item">
+        <span class="exec-meta-label">Primary Owner</span>
+        <span class="exec-meta-val">Owner A (Tier 1 &amp; 2)</span>
+      </div>
+      <div class="exec-meta-item">
+        <span class="exec-meta-label">Authorized Owner</span>
+        <span class="exec-meta-val">Owner B (Tier 1 Delegated)</span>
+      </div>
+      <div class="exec-meta-item">
+        <span class="exec-meta-label">Briefing Center</span>
+        <span class="exec-meta-val" style="color: #A855F7;">Central Hologram Table</span>
+      </div>
+      <div class="exec-meta-item">
+        <span class="exec-meta-label">Command Wall</span>
+        <span class="exec-meta-val" style="color: #38BDF8;">Orchestrator's Operational Surface</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnostics Bar -->
+  <div class="hud-layer hud-diagnostics-bar" id="hud-diagnostics">
+    WebGL 2.0 (Active) | Cinematic Inward Drift | 60 FPS
+  </div>
+
+  <!-- OWNER EXECUTIVE AGENT DRAWER -->
+  <div id="owner-agent-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <div class="drawer-avatar-badge" id="drawer-avatar" style="color: #38BDF8; border-color: #38BDF8;">OR</div>
+        <div>
+          <div class="drawer-name" id="drawer-name">ORCHESTRATOR</div>
+          <div class="drawer-role" id="drawer-role">Engineering orchestrator</div>
+        </div>
+      </div>
+      <button class="btn-close-drawer" id="btn-close-drawer">&times;</button>
+    </div>
+
+    <div class="drawer-content">
+      <div class="drawer-card">
+        <div class="drawer-card-title">
+          <span>Execution Telemetry</span>
+          <span id="drawer-status-pill" style="color: #34D399; font-weight: 700;">ONLINE_ACTIVE</span>
+        </div>
+        <div class="drawer-meta-line"><span>Assigned Station:</span> <strong id="drawer-station">Coordination console</strong></div>
+        <div class="drawer-meta-line"><span>Primary Model:</span> <strong id="drawer-model">gemini-flash</strong></div>
+        <div class="drawer-meta-line"><span>Independent Reviewer:</span> <strong id="drawer-reviewer">REVIEWER (Claude Sonnet)</strong></div>
+        <div class="drawer-meta-line"><span>Visual Archetype:</span> <strong style="color: #38BDF8;">Hybrid Futuristic Engineer</strong></div>
+      </div>
+
+      <div class="drawer-card">
+        <div class="drawer-card-title">Role summary</div>
+        <div class="drawer-log-box" id="drawer-summary">
+          Plans the work, routes it to the right agent and keeps the board honest. Reports equally to Owner A and Owner B.
+        </div>
+      </div>
+
+      <div class="drawer-card">
+        <div class="drawer-card-title">Current Assignment</div>
+        <div style="font-weight: 700; color: #F8FAFC; margin-bottom: 4px;" id="drawer-task-title">Plan the thermostat release candidate</div>
+        <div class="drawer-meta-line"><span>Task ID:</span> <strong id="drawer-task-id">JOB-ACME-100</strong></div>
+        <div class="drawer-meta-line"><span>Domain:</span> <strong id="drawer-domain">SYSTEMS_ARCHITECTURE</strong></div>
+        <div class="drawer-meta-line"><span>Governance:</span> <strong>ROUTINE_LOCAL_AUTONOMOUS</strong></div>
+      </div>
+
+      <div class="drawer-card">
+        <div class="drawer-card-title">Station Controls</div>
+        <button class="preset-btn" id="btn-focus-station" style="width: 100%; justify-content: center; margin-bottom: 10px; border-color: #38BDF8;">
+          🎯 Focus Camera on Workstation
+        </button>
+      </div>
+
+      <div class="drawer-card">
+        <div class="drawer-card-title">Stage Local Assignment (Safe Preview)</div>
+        <form class="task-form" id="task-dispatch-form" onsubmit="event.preventDefault(); handleSafeTaskSubmit();">
+          <label style="font-size: 10px; color: #94A3B8;">Engineering Objective:</label>
+          <input type="text" id="task-input-title" placeholder="e.g. Measure idle current on the rev C board" required>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="font-size: 10px; color: #94A3B8;">Complexity (1-5):</label>
+              <select id="task-input-complexity">
+                <option value="2">Level 2 (Routine)</option>
+                <option value="3" selected>Level 3 (Standard)</option>
+                <option value="4">Level 4 (Complex)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 10px; color: #94A3B8;">Priority:</label>
+              <select id="task-input-priority">
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH" selected>High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="preset-btn btn-action" style="width: 100%; justify-content: center; margin-top: 8px; padding: 8px;">
+            Preview Assignment Intake
+          </button>
+        </form>
+        <div id="task-dispatch-notice" style="display: none; margin-top: 8px; font-size: 10px; color: #34D399; font-weight: 700;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORCHESTRATOR'S COMMAND BOARD OPERATIONAL SURFACE MODAL (LEVEL 3 INTERFACE) -->
+  <div id="mission-control-overlay">
+    <div class="mission-card">
+      <div class="mission-header">
+        <div>
+          <div class="mission-title">
+            <span>👑</span>
+            <span>ORCHESTRATOR CTO COMMAND SURFACE // OPERATIONAL JOB MANAGEMENT</span>
+          </div>
+          <div class="mission-subtitle">
+            Owner interface to the orchestrator • Two-tier approval • Work register
+          </div>
+        </div>
+        <button id="btn-close-mission" style="background: none; border: none; color: #94A3B8; font-size: 26px; cursor: pointer;">&times;</button>
+      </div>
+
+      <div class="mission-body">
+        <!-- Left: Searchable Live Job Stream -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="font-size: 12px; color: #D4AF37; text-transform: uppercase;">
+              Active Jobs &bull; Live Work Register
+            </h4>
+            <span style="font-size: 10px; color: #64748B;">Click card to inspect</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 520px; overflow-y: auto; padding-right: 6px;" id="mission-task-list">
+            <!-- Dynamic jobs populated here -->
+          </div>
+        </div>
+
+        <!-- Right: Comprehensive Job Detail Panel & Owner Actions -->
+        <div class="job-detail-container" id="job-detail-panel">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span id="detail-job-id" style="font-size: 11px; font-family: monospace; color: #38BDF8; font-weight: bold;">JOB-ACME-101</span>
+              <h3 id="detail-job-title" style="font-size: 16px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">Compare two humidity sensors for the next board</h3>
+            </div>
+            <span id="detail-job-status" style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: #38BDF8;">QUEUED</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; background: #060B12; padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <div><span style="color: #64748B;">Assigned Agent:</span> <strong id="detail-assigned-agent" style="color: #F8FAFC;">ANALYST</strong></div>
+            <div><span style="color: #64748B;">Reviewer:</span> <strong id="detail-reviewer" style="color: #A855F7;">REVIEWER (Claude Sonnet)</strong></div>
+            <div><span style="color: #64748B;">Domain:</span> <strong id="detail-domain" style="color: #38BDF8;">SENSOR_RESEARCH</strong></div>
+            <div><span style="color: #64748B;">Approval Gate:</span> <strong id="detail-approval-req" style="color: #F59E0B;">TIER 1 (ANY OWNER)</strong></div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; color: #94A3B8; margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Verified Progress</div>
+            <div style="width: 100%; height: 8px; background: #060B12; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+              <div id="detail-progress-bar" style="width: 65%; height: 100%; background: linear-gradient(90deg, #38BDF8, #10B981);"></div>
+            </div>
+            <div id="detail-progress-text" style="font-size: 10px; color: #64748B; margin-top: 4px; font-family: monospace;">65% (sample) &bull; Data sheets compared &bull; Soak test not started</div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; color: #EF4444; margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Blockers &amp; Dependencies</div>
+            <div id="detail-blockers" style="background: #0B080D; border: 1px solid rgba(239, 68, 68, 0.25); padding: 10px; border-radius: 6px; font-size: 11px; color: #CBD5E1; font-family: monospace;">
+              &bull; None blocking routine development. Changing a product baseline requires owner approval.
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; color: #10B981; margin-bottom: 4px; text-transform: uppercase; font-weight: 700;">Evidence &amp; Verification</div>
+            <div id="detail-evidence" style="background: #060D12; border: 1px solid rgba(16, 185, 129, 0.25); padding: 10px; border-radius: 6px; font-size: 11px; color: #CBD5E1; font-family: monospace;">
+              &bull; Sample evidence: comparison note in sample-state/jobs.json.
+            </div>
+          </div>
+
+          <!-- Safe Owner Action Controls (Preview-Only) -->
+          <div>
+            <div style="font-size: 11px; color: #D4AF37; margin-bottom: 6px; text-transform: uppercase; font-weight: 700;">
+              Owner Action Controls (Safe Preview Mode)
+            </div>
+            <div class="owner-action-btn-row">
+              <button class="owner-action-btn btn-rec" onclick="handleOwnerAction('RECOMMENDATION')">
+                🤖 Ask Orchestrator for Recommendation
+              </button>
+              <button class="owner-action-btn btn-hold" onclick="handleOwnerAction('HOLD')">
+                ⏸️ Hold Task
+              </button>
+              <button class="owner-action-btn btn-approve" onclick="handleOwnerAction('APPROVE')">
+                ✅ Stage Approval (Preview)
+              </button>
+              <button class="owner-action-btn btn-reject" onclick="handleOwnerAction('REJECT')">
+                ❌ Reject (Preview)
+              </button>
+            </div>
+            <div id="action-feedback-box" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 11px; font-family: monospace; line-height: 1.45;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /#mission-control-overlay: was left unclosed, which trapped the owner tooltip, toast and offline modal inside the hidden overlay -->
+
+  <!-- Owner Monitor Hover Tooltip -->
+  <div id="owner-monitor-tooltip">
+    <div class="f-title" id="fmt-title">⚡ OWNER PC CONSOLE</div>
+    <div class="f-sub" id="fmt-sub">Status Board // Click to open ↗</div>
+  </div>
+
+  <!-- Owner Connection Status Toast -->
+  <div id="owner-toast">
+    <span id="owner-toast-icon">⚡</span>
+    <span id="owner-toast-text">Connecting to Status Board...</span>
+  </div>
+
+  <!-- Status Board Offline Diagnostic Modal -->
+  <div id="status-board-offline-modal">
+    <div class="owner-modal-card">
+      <div class="owner-modal-title">
+        <span>⚠️</span>
+        <span id="offline-modal-title">Status Board not reachable</span>
+      </div>
+      <div class="owner-modal-body" id="offline-modal-body">
+        Could not open the Status Board.<br><br>
+        <strong>Resolution:</strong> Set <code>statusBoardUrl</code> in <code>hq-config.local.js</code> and make sure the Status Board is running.
+      </div>
+      <div style="font-size: 11px; color: #64748B; font-family: monospace; margin-bottom: 14px;">
+        Target Address: <span id="offline-modal-url" style="color: #38BDF8;">(not configured)</span>
+      </div>
+      <div class="owner-modal-actions">
+        <button class="owner-modal-btn owner-modal-btn-close" onclick="closeOwnerOfflineModal()">Dismiss</button>
+        <button class="owner-modal-btn owner-modal-btn-retry" onclick="retryLaunchStatusBoard()">Retry Connection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional local settings (gitignored). If the file is missing the page uses defaults. -->
+  <script src="./hq-config.local.js" onerror="window.HQ_CONFIG = window.HQ_CONFIG || {};"></script>
+  <script type="module" src="./mission_control.js"></script>
+
+  <!-- Main Three.js Application Script -->
+  <script type="module">
+    import * as THREE from './vendor/three/three.module.js';
+    import { OrbitControls } from './vendor/three/OrbitControls.js';
+    import { installAIEngineers } from './ai_engineers_preview.js';
+    import { installLiveEvents } from './hq_live_events.js';   // live activity bubbles from the local event log (no model calls)
+    import { installSimulationVault } from './simulation_vault_hq.js';   // Simulation Vault v1.0: holographic table and library (reads the local Vault service)
+    import { installBriefingTable } from './briefing_table.js';   // interactive briefing table with a product hologram
+
+    // Global Error Diagnostic Trap
+    window.addEventListener('error', (e) => {
+      showErrorDiagnostic('Script execution error: ' + (e.message || e.error));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      showErrorDiagnostic('Unhandled Promise Rejection: ' + (e.reason ? e.reason.message || e.reason : 'Unknown'));
+    });
+
+    function showErrorDiagnostic(msg) {
+      console.error(msg);
+      const panel = document.getElementById('error-diagnostic-panel');
+      const text = document.getElementById('error-diagnostic-text');
+      if (panel && text) {
+        panel.style.display = 'block';
+        text.textContent = msg;
+      }
+    }
+
+    // 1. Full 9 Permanent Specialist Engineers Roster with Radial Layout (r = 11.8m)
+    // Command Board is on the east wall at (x: 13.8, z: 0).
+    // Workstations wrap around the perimeter from South-East (alpha = 55 deg) to North-East (alpha = 305 deg).
+    const radiusDesk = 11.8;
+    const degToRad = Math.PI / 180;
+
+    const ROSTER_CONFIG = [
+      { id: "IMPLEMENTER",  deg: 55,  uniformColor: 0x2D1414, accentColor: 0xF97316, accentHex: "#F97316" },
+      { id: "INTEGRATION",  deg: 85,  uniformColor: 0x2A2210, accentColor: 0xEAB308, accentHex: "#EAB308" },
+      { id: "PERFORMANCE",  deg: 115, uniformColor: 0x11281A, accentColor: 0x10B981, accentHex: "#10B981" },
+      { id: "VERIFICATION", deg: 145, uniformColor: 0x11223E, accentColor: 0x38BDF8, accentHex: "#38BDF8" },
+      { id: "ANALYST",      deg: 180, uniformColor: 0x0E282E, accentColor: 0x00E5FF, accentHex: "#00E5FF" }, // West apex
+      { id: "ORCHESTRATOR", deg: 215, uniformColor: 0x101B2E, accentColor: 0xF59E0B, accentHex: "#F59E0B" },
+      { id: "REVIEWER",     deg: 245, uniformColor: 0x221232, accentColor: 0xA855F7, accentHex: "#A855F7" },
+      { id: "QUALITY",      deg: 275, uniformColor: 0x0E2624, accentColor: 0x14B8A6, accentHex: "#14B8A6" },
+      { id: "REQUIREMENTS", deg: 305, uniformColor: 0x2B1D0E, accentColor: 0xFB923C, accentHex: "#FB923C" }
+    ];
+
+    // Fictional sample roster for the public copy (Acme Widgets thermostat firmware team).
+    const ROSTER_DATA = {
+      ORCHESTRATOR: {
+        name: "Orchestrator", role: "Engineering orchestrator",
+        domain: "Planning, routing and coordination",
+        room: "CTO Command Office", stationName: "Coordination console",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Plans the work, routes it to the right agent and keeps the board honest.",
+        currentTask: "Plan the thermostat release candidate", taskId: "JOB-ACME-100",
+        boardPos: { x: 11.2, z: -1.2 }, briefingPos: { x: -1.2, z: -2.8 },
+        monitors: [
+          { title: "ORCHESTRATOR // PLAN", lines: ["Release candidate: 2 weeks", "Open owner decisions: 1"], col: "#F59E0B" },
+          { title: "ROUTING", lines: ["7 sample jobs", "5 agents assigned"], col: "#D4AF37" },
+          { title: "COORDINATION", lines: ["9 listed; online not verified", "Review gate: Reviewer"], col: "#38BDF8" }
+        ]
+      },
+      ANALYST: {
+        name: "Analyst", role: "Research and analysis agent",
+        domain: "Sensor research and data analysis",
+        room: "Research & Analysis Lab", stationName: "Analysis bench",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Reads data sheets, compares components and writes short evidence-backed notes.",
+        currentTask: "Compare two humidity sensors for the next board", taskId: "JOB-ACME-101",
+        boardPos: { x: 11.8, z: -0.4 }, briefingPos: { x: -2.0, z: -3.8 },
+        monitors: [
+          { title: "ANALYST // SENSORS", lines: ["Candidates: 2", "Decision: open"], col: "#00E5FF" },
+          { title: "DATA SHEETS", lines: ["Drift: < 0.1 C / year", "Supply: 2 vendors"], col: "#38BDF8" },
+          { title: "SOAK TEST", lines: ["30 days planned", "Not started"], col: "#10B981" }
+        ]
+      },
+      PERFORMANCE: {
+        name: "Performance", role: "Performance agent",
+        domain: "Firmware size, boot time and battery budget",
+        room: "Firmware & Performance Area", stationName: "Power bench",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Measures each build against the size, boot-time and battery budgets.",
+        currentTask: "Cut idle current below 20 uA", taskId: "JOB-ACME-102",
+        boardPos: { x: 11.8, z: 0.4 }, briefingPos: { x: -1.4, z: -4.8 },
+        monitors: [
+          { title: "PERFORMANCE // POWER", lines: ["Idle current: 18 uA", "Budget: 25 uA"], col: "#10B981" },
+          { title: "FIRMWARE SIZE", lines: ["Flash used: 61%", "Budget: 80%"], col: "#34D399" },
+          { title: "BOOT TIME", lines: ["Cold boot: 1.4 s", "Budget: 2.0 s"], col: "#F59E0B" }
+        ]
+      },
+      VERIFICATION: {
+        name: "Verification", role: "Verification agent",
+        domain: "Hardware-in-the-loop tests",
+        room: "Firmware & Performance Area", stationName: "HIL test rig",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Runs the hardware-in-the-loop rig and reports failures with logs.",
+        currentTask: "Quarantine two flaky HIL cases", taskId: "JOB-ACME-104",
+        boardPos: { x: 12.2, z: -0.8 }, briefingPos: { x: -2.2, z: -4.2 },
+        monitors: [
+          { title: "VERIFICATION // HIL", lines: ["412 cases overnight", "0 failures"], col: "#38BDF8" },
+          { title: "FLAKY CASES", lines: ["2 quarantined", "Logs attached"], col: "#60A5FA" },
+          { title: "COVERAGE", lines: ["Schedule engine: 92%", "Display: 78%"], col: "#10B981" }
+        ]
+      },
+      INTEGRATION: {
+        name: "Integration", role: "Integration agent",
+        domain: "Wi-Fi setup, app pairing and cloud sync",
+        room: "Integration & Build Lab", stationName: "Connectivity bench",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Owns the path from the thermostat to the mobile app and the cloud.",
+        currentTask: "Pair the thermostat with the mobile app", taskId: "JOB-ACME-106",
+        boardPos: { x: 12.2, z: 0.8 }, briefingPos: { x: 1.4, z: -4.8 },
+        monitors: [
+          { title: "INTEGRATION // WI-FI", lines: ["Setup: works end to end", "Retries: 0"], col: "#EAB308" },
+          { title: "APP PAIRING", lines: ["Target: < 60 s", "Status: in progress"], col: "#FACC15" },
+          { title: "CLOUD SYNC", lines: ["Schedule upload: OK", "Conflicts: 0"], col: "#38BDF8" }
+        ]
+      },
+      IMPLEMENTER: {
+        name: "Implementer", role: "Implementation agent",
+        domain: "Thermostat firmware features",
+        room: "Integration & Build Lab", stationName: "Firmware workstation",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Writes firmware changes in small, reviewed steps.",
+        currentTask: "Schedule engine refactor", taskId: "JOB-ACME-103",
+        boardPos: { x: 12.5, z: 0.2 }, briefingPos: { x: 2.2, z: -4.2 },
+        monitors: [
+          { title: "IMPLEMENTER // SCHEDULE", lines: ["15-minute slots", "Behind a feature flag"], col: "#F97316" },
+          { title: "TESTS", lines: ["24 / 24 passed", "Author-run"], col: "#FB923C" },
+          { title: "PULL REQUEST", lines: ["Waiting for review", "Small diff"], col: "#D4AF37" }
+        ]
+      },
+      REQUIREMENTS: {
+        name: "Requirements", role: "Requirements agent",
+        domain: "Requirements and traceability",
+        room: "Learning & Quality Center", stationName: "Traceability console",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Keeps requirements traced to tests and flags gaps.",
+        currentTask: "Change the default setpoint range", taskId: "JOB-ACME-105",
+        boardPos: { x: 11.8, z: 1.0 }, briefingPos: { x: 1.2, z: -2.8 },
+        monitors: [
+          { title: "REQUIREMENTS // TRACE", lines: ["42 requirements", "3 without a test"], col: "#FB923C" },
+          { title: "OWNER DECISION", lines: ["Setpoint range", "Waiting for owners"], col: "#FDBA74" },
+          { title: "SAFETY LIMITS", lines: ["Min 5 C / Max 35 C", "Locked"], col: "#10B981" }
+        ]
+      },
+      QUALITY: {
+        name: "Quality", role: "Quality and lessons agent",
+        domain: "Root causes, lessons and regression tests",
+        room: "Learning & Quality Center", stationName: "Lessons ledger",
+        model: "gemini-flash", reviewer: "REVIEWER (Claude Sonnet)",
+        summary: "Turns each mistake into a lesson with a regression test, and rolls lessons back when they prove wrong.",
+        currentTask: "Regression suite upkeep and lesson checks", taskId: "JOB-ACME-108",
+        boardPos: { x: 12.4, z: -0.2 }, briefingPos: { x: 2.0, z: -3.8 },
+        monitors: [
+          { title: "QUALITY // LESSONS", lines: ["2 lessons this week", "1 rolled back"], col: "#14B8A6" },
+          { title: "REGRESSION TESTS", lines: ["Automated suite", "Runs on every build"], col: "#2DD4BF" },
+          { title: "ROLLBACK GATE", lines: ["Lesson rollback", "Needs a reason"], col: "#38BDF8" }
+        ]
+      },
+      REVIEWER: {
+        name: "Reviewer", role: "Independent review agent",
+        domain: "Code and claim review",
+        room: "Independent Review Room", stationName: "Review desk",
+        model: "claude-sonnet", reviewer: "ORCHESTRATOR (Gemini Flash)",
+        summary: "Reviews changes on a different model family and re-runs the evidence. Agreement between agents is not proof.",
+        currentTask: "Review the schedule engine change", taskId: "JOB-ACME-107",
+        boardPos: { x: 11.2, z: 1.2 }, briefingPos: { x: 0.0, z: -2.4 },
+        monitors: [
+          { title: "REVIEWER // REVIEW", lines: ["Different model family", "Re-runs the tests"], col: "#A855F7" },
+          { title: "CLAIM CHECK", lines: ["Consensus != proof", "Evidence required"], col: "#C084FC" },
+          { title: "VERDICTS", lines: ["Pending: 1", "This week: 3"], col: "#EF4444" }
+        ]
+      }
+    };
+
+    const ROSTER = ROSTER_CONFIG.map(cfg => {
+      const data = ROSTER_DATA[cfg.id];
+      const rad = cfg.deg * degToRad;
+      const x = +(radiusDesk * Math.cos(rad)).toFixed(2);
+      const z = +(radiusDesk * Math.sin(rad)).toFixed(2);
+      // Desk orientation. PREVIEW: turned 180 degrees so each specialist sits on the room side of the desk
+      // and faces outward to the windows. (Was Math.atan2(x, z): agent on the window side, facing the owners.)
+      const rotY = Math.atan2(x, z) + Math.PI;
+
+      return {
+        id: cfg.id,
+        deg: cfg.deg,
+        pos: { x, z },
+        rotY,
+        uniformColor: cfg.uniformColor,
+        accentColor: cfg.accentColor,
+        accentHex: cfg.accentHex,
+        ...data
+      };
+    });
+
+    // 2. Scene, Camera, Renderer Setup
+    const container = document.getElementById('canvas3d-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050912);
+    scene.fog = new THREE.FogExp2(0x050912, 0.012);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 150);
+
+    // Initial Zoomed-Out Executive Overview position
+    const initialCamPos = new THREE.Vector3(-8.5, 6.2, 14.5);
+    const initialLookAt = new THREE.Vector3(0, 1.2, -1.0);
+
+    // Settled Inward Drift Target position (Majestic, expansive room view)
+    const settledCamPos = new THREE.Vector3(-5.5, 4.2, 8.5);
+    const settledLookAt = new THREE.Vector3(0, 1.2, -1.0);
+
+    camera.position.copy(initialCamPos);
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+    } catch (e) {
+      showErrorDiagnostic('WebGL Initialization Failed: ' + e.message);
+      throw e;
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.02;
+    controls.minDistance = 1.5;
+    controls.maxDistance = 32.0;
+    controls.target.copy(initialLookAt);
+    controls.update();
+
+    let autoDriftActive = true;
+    let autoDriftElapsed = 0;
+    const autoDriftDuration = 4.2;
+
+    // 3. Dynamic Environment Texture Generator
+    function generatePanoramicCanvas(timeOfDay = 'sunset') {
+      const c = document.createElement('canvas');
+      c.width = 4096; c.height = 1024;
+      const ctx = c.getContext('2d');
+
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, 600);
+      let waterCol1, waterCol2, sunCol, sunY;
+
+      if (timeOfDay === 'sunset') {
+        skyGrad.addColorStop(0.0, '#060B18');
+        skyGrad.addColorStop(0.3, '#101F3C');
+        skyGrad.addColorStop(0.65, '#4A1D2F');
+        skyGrad.addColorStop(0.85, '#B45309');
+        skyGrad.addColorStop(1.0, '#F59E0B');
+        waterCol1 = '#132338'; waterCol2 = '#060D1A';
+        sunCol = 'rgba(255, 237, 180, 0.95)'; sunY = 530;
+      } else if (timeOfDay === 'daylight') {
+        skyGrad.addColorStop(0.0, '#0A2540');
+        skyGrad.addColorStop(0.4, '#1E4976');
+        skyGrad.addColorStop(0.8, '#60A5FA');
+        skyGrad.addColorStop(1.0, '#93C5FD');
+        waterCol1 = '#0E3A5A'; waterCol2 = '#081D2E';
+        sunCol = 'rgba(255, 255, 240, 1.0)'; sunY = 320;
+      } else { // midnight
+        skyGrad.addColorStop(0.0, '#020408');
+        skyGrad.addColorStop(0.4, '#040814');
+        skyGrad.addColorStop(0.8, '#081226');
+        skyGrad.addColorStop(1.0, '#0F2042');
+        waterCol1 = '#040914'; waterCol2 = '#020408';
+        sunCol = 'rgba(186, 230, 253, 0.85)'; sunY = 480;
+      }
+
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, 4096, 600);
+
+      // Distant headlands / island silhouette
+      ctx.fillStyle = '#060B14';
+      ctx.beginPath();
+      ctx.moveTo(0, 600);
+      for (let x = 0; x <= 4096; x += 64) {
+        const h = Math.sin(x * 0.003) * 35 + Math.cos(x * 0.012) * 20 + 25;
+        ctx.lineTo(x, 600 - h);
+      }
+      ctx.lineTo(4096, 600);
+      ctx.closePath();
+      ctx.fill();
+
+      // Panoramic water surface
+      const waterGrad = ctx.createLinearGradient(0, 600, 0, 1024);
+      waterGrad.addColorStop(0.0, waterCol1);
+      waterGrad.addColorStop(1.0, waterCol2);
+      ctx.fillStyle = waterGrad;
+      ctx.fillRect(0, 600, 4096, 424);
+
+      // Shimmering Specular Sunlight Reflection
+      const specGrad = ctx.createRadialGradient(2048, 600, 10, 2048, 780, 500);
+      specGrad.addColorStop(0, timeOfDay === 'midnight' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(245, 158, 11, 0.45)');
+      specGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = specGrad;
+      ctx.fillRect(1400, 600, 1296, 424);
+
+      // Crisp Sun Disk
+      ctx.fillStyle = sunCol;
+      ctx.beginPath();
+      ctx.arc(2048, sunY, timeOfDay === 'midnight' ? 24 : 45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Horizon line and labels
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, 600); ctx.lineTo(4096, 600); ctx.stroke();
+
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+      ctx.font = '12px monospace';
+      ctx.fillText('AGENT HQ // OBSERVATION DECK // HORIZON VIEW', 120, 585);
+      ctx.fillText('SAMPLE DATA // ACME WIDGETS (FICTIONAL)', 2600, 585);
+
+      return c;
+    }
+
+    const horizonPanoramaCanvas = generatePanoramicCanvas('sunset');
+    const horizonPanoramaTex = new THREE.CanvasTexture(horizonPanoramaCanvas);
+    horizonPanoramaTex.wrapS = THREE.RepeatWrapping;
+    horizonPanoramaTex.repeat.x = -1;
+    horizonPanoramaTex.offset.x = 1;
+
+    // Ambient and Directional Lights
+    const ambientLight = new THREE.AmbientLight(0xE0F2FE, 1.25);
+    scene.add(ambientLight);
+
+    const hemiLight = new THREE.HemisphereLight(0x38BDF8, 0x0A0F1D, 1.4);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xFFF5EB, 2.2);
+    sunLight.position.set(0, 14, -22);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 1;
+    sunLight.shadow.camera.far = 45;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    function renderDynamicEnvironment(mode) {
+      const c = generatePanoramicCanvas(mode);
+      horizonPanoramaTex.image = c;
+      horizonPanoramaTex.needsUpdate = true;
+
+      if (mode === 'sunset') {
+        ambientLight.color.setHex(0xE0F2FE); ambientLight.intensity = 1.25;
+        sunLight.color.setHex(0xFFE0B2); sunLight.intensity = 2.2;
+        sunLight.position.set(0, 12, -22);
+      } else if (mode === 'daylight') {
+        ambientLight.color.setHex(0xF0F9FF); ambientLight.intensity = 1.5;
+        sunLight.color.setHex(0xFFFFFF); sunLight.intensity = 2.6;
+        sunLight.position.set(4, 18, -20);
+      } else { // midnight
+        ambientLight.color.setHex(0x1E293B); ambientLight.intensity = 0.85;
+        sunLight.color.setHex(0x38BDF8); sunLight.intensity = 1.1;
+        sunLight.position.set(-2, 10, -22);
+      }
+    }
+
+    // 4. Materials Library
+    const matOwnerGlass = new THREE.MeshPhysicalMaterial({
+      color: 0x2A1A08,
+      transmission: 0.85,
+      opacity: 1.0,
+      roughness: 0.12,
+      metalness: 0.15,
+      thickness: 1.4,
+      ior: 1.52,
+      attenuationColor: new THREE.Color(0xD4AF37),
+      attenuationDistance: 0.75
+    });
+
+    const matOwnerEdgeGlow = new THREE.MeshBasicMaterial({ color: 0xF59E0B });
+
+    const matEngineerGlass = new THREE.MeshPhysicalMaterial({
+      color: 0x0B2236,
+      transmission: 0.88,
+      opacity: 1.0,
+      roughness: 0.14,
+      metalness: 0.20,
+      thickness: 1.0,
+      ior: 1.50,
+      attenuationColor: new THREE.Color(0x00E5FF),
+      attenuationDistance: 0.55
+    });
+
+    const matBridgeFloor = new THREE.MeshStandardMaterial({
+      color: 0x0A101A,
+      roughness: 0.14,
+      metalness: 0.86
+    });
+
+    const matBronzeBezel = new THREE.MeshStandardMaterial({
+      color: 0xC89B3C,
+      metalness: 0.88,
+      roughness: 0.28
+    });
+
+    const matDarkTitanium = new THREE.MeshStandardMaterial({
+      color: 0x1A2230,
+      roughness: 0.30,
+      metalness: 0.88
+    });
+
+    const matWarmCoveGlow = new THREE.MeshBasicMaterial({ color: 0xF5A623 });
+
+    // 5. ARCHITECTURAL ROOM GEOMETRY (Circular Room R = 16.5m)
+    const bridgeRadius = 16.5;
+    const bridgeHeight = 6.8;
+
+    const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(38, 38), matBridgeFloor);
+    floorMesh.rotation.x = -Math.PI / 2; floorMesh.receiveShadow = true;
+    scene.add(floorMesh);
+
+    const panoramaGeo = new THREE.CylinderGeometry(bridgeRadius, bridgeRadius, bridgeHeight, 96, 1, true);
+    const panoramaMat = new THREE.MeshBasicMaterial({ map: horizonPanoramaTex, side: THREE.BackSide, fog: false });
+    const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMat);
+    panoramaMesh.position.set(0, bridgeHeight / 2, 0);
+    scene.add(panoramaMesh);
+
+    const lowerRibbon = new THREE.Mesh(new THREE.CylinderGeometry(bridgeRadius - 0.04, bridgeRadius - 0.04, 0.20, 96, 1, true), matWarmCoveGlow);
+    lowerRibbon.position.set(0, 0.12, 0); scene.add(lowerRibbon);
+
+    const upperRibbon = new THREE.Mesh(new THREE.CylinderGeometry(bridgeRadius - 0.04, bridgeRadius - 0.04, 0.22, 96, 1, true), matWarmCoveGlow);
+    upperRibbon.position.set(0, bridgeHeight - 0.11, 0); scene.add(upperRibbon);
+
+    const ceilingBase = new THREE.Mesh(new THREE.PlaneGeometry(38, 38), new THREE.MeshStandardMaterial({ color: 0x0A0F18, roughness: 0.5, metalness: 0.4 }));
+    ceilingBase.rotation.x = Math.PI / 2; ceilingBase.position.set(0, bridgeHeight, 0); scene.add(ceilingBase);
+
+    const coveTorus = new THREE.Mesh(new THREE.TorusGeometry(5.2, 0.12, 16, 64), matWarmCoveGlow);
+    coveTorus.rotation.x = Math.PI / 2; coveTorus.scale.set(1.3, 0.8, 1.0); coveTorus.position.set(0, bridgeHeight - 0.15, 0.5);
+    scene.add(coveTorus);
+
+    // 6. ZONE 1: OWNER EXECUTIVE COMMAND PLATFORM (Central Focus)
+    const ownerZone = new THREE.Group();
+    ownerZone.position.set(0, 0, 0.2);
+
+    const daisLower = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.10, 3.8), matDarkTitanium);
+    daisLower.position.y = 0.05; daisLower.castShadow = true; daisLower.receiveShadow = true;
+    ownerZone.add(daisLower);
+
+    const daisUpper = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.12, 3.2), new THREE.MeshStandardMaterial({ color: 0x121A26, roughness: 0.25, metalness: 0.7 }));
+    daisUpper.position.y = 0.16; daisUpper.castShadow = true; daisUpper.receiveShadow = true;
+    ownerZone.add(daisUpper);
+
+    // Owner platform floor glow: Owner A's side (x < 0) is blue-white, Owner B's side (x > 0) keeps the amber cove colour.
+    // Chair materials remain deliberately unchanged.
+    const matOwnerFloorGlow = new THREE.MeshStandardMaterial({
+      color: 0xD6EBFF, emissive: 0xA7D8FF, emissiveIntensity: 3.6, roughness: 0.18, metalness: 0.18,
+      toneMapped: false
+    });
+    const daisGlow = new THREE.Mesh(new THREE.BoxGeometry(2.63, 0.03, 3.86), matOwnerFloorGlow);            // Owner A's side
+    daisGlow.position.set(-1.315, 0.02, 0); ownerZone.add(daisGlow);
+    const daisGlowOwnerB = new THREE.Mesh(new THREE.BoxGeometry(2.63, 0.03, 3.86), matWarmCoveGlow);           // Owner B's side: amber
+    daisGlowOwnerB.position.set(1.315, 0.02, 0); ownerZone.add(daisGlowOwnerB);
+    const daisCoolWash = new THREE.PointLight(0xA7D8FF, 0.9, 3.2, 2);
+    daisCoolWash.position.set(-1.5, 0.22, 0.8); ownerZone.add(daisCoolWash);
+
+    const compassDeco = new THREE.Mesh(
+      new THREE.RingGeometry(0.35, 0.40, 32),
+      new THREE.MeshStandardMaterial({
+        color: 0xD6EBFF, emissive: 0xA7D8FF, emissiveIntensity: 3.6,
+        roughness: 0.18, metalness: 0.18, side: THREE.DoubleSide, toneMapped: false
+      })
+    );
+    compassDeco.rotation.x = -Math.PI / 2; compassDeco.position.set(0, 0.222, 0.2);
+    ownerZone.add(compassDeco);
+
+    // Illuminated Amber Glass Owner Desk
+    const ownerDeskGroup = new THREE.Group();
+    ownerDeskGroup.position.set(0, 0.22, -0.65);
+
+    // The owners share one desk. Owner A's half (x < 0) is blue-white; Owner B's half (x > 0) is amber. Both halves have the
+    // same TOP/BOTTOM perimeter trim geometry. The gold chair backs remain unchanged.
+    const matOwnerAGlass = matOwnerGlass.clone();
+    matOwnerAGlass.color.set(0x0E1A2A); matOwnerAGlass.attenuationColor = new THREE.Color(0xB7DCFF);
+    const matOwnerAEdgeGlow = new THREE.MeshStandardMaterial({
+      color: 0xD6EBFF, emissive: 0xA7D8FF, emissiveIntensity: 3.8, roughness: 0.16, metalness: 0.2,
+      toneMapped: false
+    });
+    const matOwnerBEdgeGlow = new THREE.MeshStandardMaterial({
+      color: 0xFFD08A, emissive: 0xF59E0B, emissiveIntensity: 3.2, roughness: 0.16, metalness: 0.2,
+      toneMapped: false
+    });
+
+    const fDeskTop = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.10, 1.2), matOwnerGlass);       // Owner B: original amber glass
+    fDeskTop.position.set(1.05, 0.75, 0); fDeskTop.castShadow = true;
+    ownerDeskGroup.add(fDeskTop);
+    const fDeskTopOwnerA = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.10, 1.2), matOwnerAGlass);
+    fDeskTopOwnerA.position.set(-1.05, 0.75, 0); fDeskTopOwnerA.castShadow = true;
+    ownerDeskGroup.add(fDeskTopOwnerA);
+
+    function addOwnerHalfPerimeter(centerX, material) {
+      const trim = new THREE.Group();
+      const horizontal = new THREE.BoxGeometry(2.08, 0.022, 0.035);
+      const vertical = new THREE.BoxGeometry(0.035, 0.022, 1.17);
+      [0.812, 0.688].forEach(y => {
+        const front = new THREE.Mesh(horizontal, material);
+        front.position.set(centerX, y, 0.602); trim.add(front);
+        const back = front.clone(); back.position.z = -0.602; trim.add(back);
+        const outer = new THREE.Mesh(vertical, material);
+        outer.position.set(centerX - 1.032, y, 0); trim.add(outer);
+        const seam = outer.clone(); seam.position.x = centerX + 1.032; trim.add(seam);
+      });
+      ownerDeskGroup.add(trim);
+      return trim;
+    }
+
+    const fEdgeGlowOwnerA = addOwnerHalfPerimeter(-1.05, matOwnerAEdgeGlow);
+    const fEdgeGlow = addOwnerHalfPerimeter(1.05, matOwnerBEdgeGlow);                                // Owner B: amber top and bottom trim
+
+    const fInternalGlow = new THREE.PointLight(0xF59E0B, 2.2, 3.2, 2);                               // Owner B: original amber lower glow
+    fInternalGlow.position.set(1.05, 0.62, 0.12);
+    ownerDeskGroup.add(fInternalGlow);
+    const fInternalGlowOwnerA = new THREE.PointLight(0xA7D8FF, 2.7, 2.6, 2);                            // Owner A's lower blue-white wrap (range kept to that half)
+    fInternalGlowOwnerA.position.set(-1.15, 0.62, 0.12);
+    ownerDeskGroup.add(fInternalGlowOwnerA);
+    const fSurfaceWashOwnerA = new THREE.PointLight(0xF5FAFF, 1.25, 2.2, 2);                            // Owner A's upper white surface wash
+    fSurfaceWashOwnerA.position.set(-1.05, 1.08, 0.18);
+    ownerDeskGroup.add(fSurfaceWashOwnerA);
+    const fFrontWashOwnerA = new THREE.PointLight(0x6EC8FF, 1.7, 2.5, 2);                               // carry cool light around the front/bottom edge
+    fFrontWashOwnerA.position.set(-1.05, 0.52, 0.72);
+    ownerDeskGroup.add(fFrontWashOwnerA);
+    const fSurfaceWashOwnerB = new THREE.PointLight(0xFFD9A0, 0.7, 2.2, 2);                             // Owner B: soft warm surface wash
+    fSurfaceWashOwnerB.position.set(1.05, 1.08, 0.18);
+    ownerDeskGroup.add(fSurfaceWashOwnerB);
+    const fFrontWashOwnerB = new THREE.PointLight(0xF59E0B, 1.1, 2.5, 2);                               // Owner B: amber front/bottom edge wash
+    fFrontWashOwnerB.position.set(1.05, 0.52, 0.72);
+    ownerDeskGroup.add(fFrontWashOwnerB);
+
+    const fLegL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.70, 1.0), matBronzeBezel);
+    fLegL.position.set(-1.8, 0.35, 0); fLegL.castShadow = true; ownerDeskGroup.add(fLegL);
+    const fLegR = fLegL.clone(); fLegR.position.set(1.8, 0.35, 0); ownerDeskGroup.add(fLegR);
+
+    // Dual Owner Consoles (Both owners)
+    function createOwnerGlassConsole(ownerName, badgeText, colorHex, ownerId) {
+      const cGrp = new THREE.Group();
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.28, 12), matBronzeBezel);
+      stand.position.y = 0.14; cGrp.add(stand);
+
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.04), matDarkTitanium);
+      frame.position.y = 0.54; cGrp.add(frame);
+
+      // Glowing outline frame for hover feedback
+      const hoverBorderMat = new THREE.MeshBasicMaterial({ color: colorHex, visible: false, wireframe: true });
+      const hoverBorder = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.82, 0.045), hoverBorderMat);
+      hoverBorder.position.y = 0.54;
+      cGrp.add(hoverBorder);
+
+      const c = document.createElement('canvas');
+      c.width = 440; c.height = 250;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#060B12'; ctx.fillRect(0, 0, 440, 250);
+      ctx.strokeStyle = colorHex; ctx.lineWidth = 2; ctx.strokeRect(4, 4, 432, 242);
+
+      ctx.fillStyle = colorHex; ctx.font = 'bold 16px sans-serif'; ctx.fillText(ownerName.toUpperCase(), 18, 30);
+      ctx.fillStyle = '#38BDF8'; ctx.font = '12px sans-serif'; ctx.fillText(badgeText, 18, 52);
+      ctx.fillStyle = '#10B981'; ctx.font = 'bold 11px monospace'; ctx.fillText('OWNER GATE // TWO-OWNER APPROVAL', 18, 76);
+      ctx.fillStyle = '#CBD5E1'; ctx.font = '10px monospace';
+      ctx.fillText('PROTECTED EXECUTION: OFF (PREVIEW)', 18, 98);
+      ctx.fillText('SPECIALISTS: 9 RADIAL STATIONS', 18, 120);
+      ctx.fillText('COMMAND BOARD: ORCHESTRATOR INTERACTIVE', 18, 142);
+      ctx.fillText('STATUS BOARD: see hq-config', 18, 164);
+
+      // Interactive Action Banner on Screen
+      ctx.fillStyle = colorHex; ctx.fillRect(16, 180, 408, 56);
+      ctx.fillStyle = '#060B12'; ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('▶ OPEN OWNER DESK (SIGN IN)', 28, 204);
+      ctx.font = '10px monospace';
+      ctx.fillText('CLICK MONITOR: SIGN IN / DASHBOARD / BOARD', 28, 222);
+
+      const tex = new THREE.CanvasTexture(c);
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.74), new THREE.MeshBasicMaterial({ map: tex }));
+      scr.position.set(0, 0.54, 0.022); cGrp.add(scr);
+
+      const monitorData = {
+        isOwnerMonitor: true,
+        ownerName: ownerName,
+        ownerId: ownerId,
+        colorHex: colorHex,
+        hoverBorder: hoverBorder,
+        screenMesh: scr,
+        boardUrl: (window.HQ_CONFIG && window.HQ_CONFIG.statusBoardUrl) || ''
+      };
+
+      scr.userData = monitorData;
+      frame.userData = monitorData;
+      cGrp.userData = monitorData;
+
+      return { group: cGrp, screen: scr, frame: frame, hoverBorder: hoverBorder, data: monitorData };
+    }
+
+    const consoleObjOwnerA = createOwnerGlassConsole('Owner A', 'Owner A // Tier 1 & 2', '#B7DCFF', 'owner_a');   // blue-white accent to match Owner A's desk lighting
+    const consoleOwnerA = consoleObjOwnerA.group;
+    consoleOwnerA.position.set(-1.1, 0.80, 0.1); consoleOwnerA.rotation.y = 0.08; ownerDeskGroup.add(consoleOwnerA);
+
+    const consoleObjOwnerB = createOwnerGlassConsole('Owner B', 'Owner B // Tier 1 Delegated', '#38BDF8', 'owner_b');   // Owner B's console accent
+    const consoleOwnerB = consoleObjOwnerB.group;
+    consoleOwnerB.position.set(1.1, 0.80, 0.1); consoleOwnerB.rotation.y = -0.08; ownerDeskGroup.add(consoleOwnerB);
+
+    ownerZone.add(ownerDeskGroup);
+
+    // Owner chairs
+    function createOwnerChair(ownerName, badgeColor) {
+      const chair = new THREE.Group();
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.52, 24), matDarkTitanium);
+      pedestal.position.y = 0.26; chair.add(pedestal);
+
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.12, 0.74), new THREE.MeshStandardMaterial({ color: 0x141820, roughness: 0.55 }));
+      seat.position.set(0, 0.54, 0); chair.add(seat);
+
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.95, 0.14), new THREE.MeshStandardMaterial({ color: 0x141820, roughness: 0.55 }));
+      back.position.set(0, 1.05, 0.32); back.rotation.x = -0.12; chair.add(back);
+
+      const piping = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.96, 0.03), matBronzeBezel);
+      piping.position.set(0, 1.05, 0.40); piping.rotation.x = -0.12; chair.add(piping);
+
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.48), matDarkTitanium);
+      armL.position.set(-0.38, 0.78, 0.08); chair.add(armL);
+      const armR = armL.clone(); armR.position.set(0.38, 0.78, 0.08); chair.add(armR);
+
+      return chair;
+    }
+
+    const ownerChairOwnerA = createOwnerChair('Owner A', '#D4AF37');
+    ownerChairOwnerA.position.set(-1.1, 0.22, 0.85); ownerZone.add(ownerChairOwnerA);
+
+    const ownerChairOwnerB = createOwnerChair('Owner B', '#38BDF8');
+    ownerChairOwnerB.position.set(1.1, 0.22, 0.85); ownerZone.add(ownerChairOwnerB);
+
+    scene.add(ownerZone);
+
+    // 7. ZONE 2: CENTRAL BRIEFING & SIMULATION HOLOGRAM TABLE (Relocated to dedicated table)
+    const briefingTableGroup = new THREE.Group();
+    briefingTableGroup.position.set(0, 0, -3.8);
+
+    // Cylindrical Fluted Pedestal
+    const tableBase = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.5, 0.82, 32), matDarkTitanium);
+    tableBase.position.y = 0.41; tableBase.castShadow = true;
+    briefingTableGroup.add(tableBase);
+
+    // Circular Smoked Glass Tabletop
+    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.08, 48), matEngineerGlass);
+    tableTop.position.y = 0.86; tableTop.castShadow = true;
+    briefingTableGroup.add(tableTop);
+
+    // Glowing Cyan Perimeter Halo Ring
+    const tableRimGlow = new THREE.Mesh(
+      new THREE.TorusGeometry(1.82, 0.02, 16, 64),
+      new THREE.MeshBasicMaterial({ color: 0x00E5FF })
+    );
+    tableRimGlow.rotation.x = Math.PI / 2; tableRimGlow.position.y = 0.86;
+    briefingTableGroup.add(tableRimGlow);
+
+    // Concentric Bronze Projector Rings in Tabletop Center
+    const emitterRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.4, 0.8, 32),
+      new THREE.MeshStandardMaterial({ color: 0xD4AF37, metalness: 0.9, roughness: 0.2, side: THREE.DoubleSide })
+    );
+    emitterRing.rotation.x = -Math.PI / 2; emitterRing.position.y = 0.901;
+    briefingTableGroup.add(emitterRing);
+
+    // Central Blue Projector Aperture
+    const emitterCore = new THREE.Mesh(
+      new THREE.CircleGeometry(0.38, 32),
+      new THREE.MeshBasicMaterial({ color: 0x00E5FF, side: THREE.DoubleSide })
+    );
+    emitterCore.rotation.x = -Math.PI / 2; emitterCore.position.y = 0.902;
+    briefingTableGroup.add(emitterCore);
+
+    // Table Uplight
+    const tableUplight = new THREE.PointLight(0x00E5FF, 3.5, 6);
+    tableUplight.position.set(0, 1.6, 0);
+    briefingTableGroup.add(tableUplight);
+
+    // Floating 3D Holographic Simulation (Rotates above table)
+    const tableHoloGroup = new THREE.Group();
+    tableHoloGroup.position.set(0, 1.6, 0);
+
+    // Hologram Canvas: Pipeline DAG & Kinematic Simulation
+    const holoCanvas = document.createElement('canvas');
+    holoCanvas.width = 1024; holoCanvas.height = 512;
+    const hctx = holoCanvas.getContext('2d');
+    hctx.fillStyle = 'rgba(6, 18, 36, 0.88)'; hctx.fillRect(0, 0, 1024, 512);
+    hctx.strokeStyle = '#00E5FF'; hctx.lineWidth = 3; hctx.strokeRect(6, 6, 1012, 500);
+
+    hctx.fillStyle = '#00E5FF'; hctx.font = 'bold 22px monospace';
+    hctx.fillText('✨ CENTRAL BRIEFING TABLE // BUILD PIPELINE', 24, 42);
+
+    const simNodes = [
+      { x: 140, y: 220, label: 'Firmware build\nunit tests', col: '#38BDF8' },
+      { x: 440, y: 220, label: 'HIL rig\nschedule cases', col: '#F59E0B' },
+      { x: 740, y: 220, label: 'Independent review\nowner sign-off', col: '#10B981' }
+    ];
+    simNodes.forEach(n => {
+      hctx.fillStyle = 'rgba(15, 23, 42, 0.9)'; hctx.fillRect(n.x - 100, n.y - 45, 200, 90);
+      hctx.strokeStyle = n.col; hctx.lineWidth = 2; hctx.strokeRect(n.x - 100, n.y - 45, 200, 90);
+      hctx.fillStyle = '#FFF'; hctx.font = 'bold 13px sans-serif';
+      n.label.split('\n').forEach((l, idx) => hctx.fillText(l, n.x - 85, n.y - 10 + idx * 24));
+    });
+
+    // Connecting laser arrows on canvas
+    hctx.strokeStyle = '#00E5FF'; hctx.lineWidth = 2;
+    hctx.beginPath();
+    hctx.moveTo(240, 220); hctx.lineTo(340, 220);
+    hctx.moveTo(540, 220); hctx.lineTo(640, 220);
+    hctx.stroke();
+
+    hctx.fillStyle = '#D4AF37'; hctx.font = 'bold 13px monospace';
+    hctx.fillText('SAMPLE PIPELINE // FICTIONAL ACME WIDGETS DATA', 24, 450);
+
+    const holoTex = new THREE.CanvasTexture(holoCanvas);
+    const holoPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.6, 1.8),
+      new THREE.MeshBasicMaterial({ map: holoTex, transparent: true, opacity: 0.92, side: THREE.DoubleSide })
+    );
+    tableHoloGroup.add(holoPlane);
+
+    // 4 Projector Beams from table rim to hologram corners
+    const tableLaserMat = new THREE.MeshBasicMaterial({ color: 0x00E5FF, transparent: true, opacity: 0.45 });
+    const beamGeo = new THREE.CylinderGeometry(0.008, 0.008, 1.4, 8);
+    beamGeo.rotateX(Math.PI / 4);
+
+    [-1.2, 1.2].forEach(bx => {
+      const b1 = new THREE.Mesh(beamGeo, tableLaserMat);
+      b1.position.set(bx, -0.3, 0); tableHoloGroup.add(b1);
+    });
+
+    briefingTableGroup.add(tableHoloGroup);
+    scene.add(briefingTableGroup);
+
+    // 8. ZONE 3: ORCHESTRATOR'S COMMAND BOARD WALL DISPLAY (Focused purely on jobs, queues & verified work)
+    const boardZone = new THREE.Group();
+    boardZone.position.set(13.8, 3.4, 0);
+    boardZone.rotation.y = -Math.PI / 2;
+
+    const boardFrame = new THREE.Mesh(new THREE.BoxGeometry(7.6, 4.0, 0.12), matBronzeBezel);
+    boardZone.add(boardFrame);
+
+    const boardCanvas = document.createElement('canvas');
+    boardCanvas.width = 2048; boardCanvas.height = 1024;
+    const bctx = boardCanvas.getContext('2d');
+    let boardTex = new THREE.CanvasTexture(boardCanvas);
+
+    const boardScreen = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 3.8), new THREE.MeshBasicMaterial({ map: boardTex }));
+    boardScreen.position.set(0, 0, 0.065);
+    boardScreen.userData = { isCommandBoard: true };
+    boardZone.add(boardScreen);
+    scene.add(boardZone);
+
+    const interactiveObjects = [
+      boardScreen,
+      consoleObjOwnerA.screen,
+      consoleObjOwnerB.screen,
+      consoleObjOwnerA.frame,
+      consoleObjOwnerB.frame
+    ];
+
+    // MISSION CONTROL KIOSK: the existing glass console component, repainted. Clicking it opens the real Headquarters gateway dashboard (see hq_gateway_links.js).
+    const consoleObjKiosk = createOwnerGlassConsole('Mission Control', 'Live Headquarters dashboard // R3', '#38BDF8', 'kiosk');
+    {
+      const kd = consoleObjKiosk.data;
+      kd.isOwnerMonitor = false; kd.isMissionKiosk = true; delete kd.boardUrl;
+      const kc = consoleObjKiosk.screen.material.map.image, kx = kc.getContext('2d');
+      kx.fillStyle = '#060B12'; kx.fillRect(0, 0, 440, 250);
+      kx.strokeStyle = '#38BDF8'; kx.lineWidth = 2; kx.strokeRect(4, 4, 432, 242);
+      kx.fillStyle = '#38BDF8'; kx.font = 'bold 18px sans-serif'; kx.fillText('MISSION CONTROL', 18, 34);
+      kx.fillStyle = '#CBD5E1'; kx.font = '12px sans-serif'; kx.fillText('Live Headquarters dashboard (R3 gateway)', 18, 58);
+      kx.font = '10px monospace';
+      kx.fillText('Requests, agents, Mission Control,', 18, 92);
+      kx.fillText('engineering cases and reviews', 18, 110);
+      kx.fillText('Shows the real gateway page, not a copy.', 18, 138);
+      kx.fillText('Sign-in happens on the gateway page.', 18, 156);
+      kx.fillStyle = '#38BDF8'; kx.fillRect(16, 180, 408, 56);
+      kx.fillStyle = '#060B12'; kx.font = 'bold 13px sans-serif'; kx.fillText('▶ OPEN MISSION CONTROL DASHBOARD', 28, 204);
+      kx.font = '10px monospace'; kx.fillText('CLICK TO OPEN  //  RETURN BUTTON BRINGS YOU BACK', 28, 222);
+      consoleObjKiosk.screen.material.map.needsUpdate = true;
+      const kioskGroup = new THREE.Group();
+      const kioskBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 0.62, 16), matDarkTitanium);
+      kioskBase.position.y = 0.31; kioskGroup.add(kioskBase);
+      consoleObjKiosk.group.position.set(0, 0.62, 0); kioskGroup.add(consoleObjKiosk.group);
+      kioskGroup.position.set(11.6, 0, 5.2); kioskGroup.rotation.y = -Math.PI / 2;      // beside the Command Board wall, facing the room
+      scene.add(kioskGroup);
+      interactiveObjects.push(consoleObjKiosk.screen, consoleObjKiosk.frame);
+    }
+
+    // Render Clean Level 1 Board Canvas (No floating hologram on wall)
+    let cachedJobs = [];
+    let selectedJob = null;
+
+    function renderBoardWithJobs(jobs) {
+      cachedJobs = jobs || [];
+      if (!selectedJob && cachedJobs.length > 0) selectedJob = cachedJobs[0];
+
+      bctx.fillStyle = '#060B12'; bctx.fillRect(0, 0, 2048, 1024);
+      bctx.strokeStyle = '#D4AF37'; bctx.lineWidth = 4; bctx.strokeRect(6, 6, 2036, 1012);
+
+      // Header Banner
+      bctx.fillStyle = '#0F1A2E'; bctx.fillRect(10, 10, 2028, 90);
+      bctx.fillStyle = '#D4AF37'; bctx.font = 'bold 26px sans-serif';
+      bctx.fillText('AGENT HQ // ORCHESTRATOR COMMAND BOARD', 30, 48);
+
+      bctx.fillStyle = '#38BDF8'; bctx.font = '13px monospace';
+      bctx.fillText('ORCHESTRATOR\'S COMMAND BOARD • TWO-OWNER APPROVAL • CLICK TO OPEN JOB DETAIL & OWNER CONTROLS', 30, 78);
+
+      const colWidth = 490;
+      const cols = [
+        { title: 'QUEUED / TRIAGED', col: '#38BDF8', x: 20 },
+        { title: 'ACTIVE DEV', col: '#F59E0B', x: 526 },
+        { title: 'OWNER APPROVAL REQ', col: '#EF4444', x: 1032 },
+        { title: 'VERIFIED / DONE', col: '#10B981', x: 1538 }
+      ];
+
+      cols.forEach(c => {
+        bctx.fillStyle = 'rgba(15, 23, 42, 0.6)'; bctx.fillRect(c.x, 110, colWidth, 900);
+        bctx.strokeStyle = c.col; bctx.lineWidth = 2; bctx.strokeRect(c.x, 110, colWidth, 900);
+        bctx.fillStyle = c.col; bctx.font = 'bold 15px monospace'; bctx.fillText(c.title, c.x + 16, 142);
+      });
+
+      function drawCard(colIdx, y, id, title, agent, color, statusText) {
+        const x = cols[colIdx].x + 12;
+        bctx.fillStyle = 'rgba(8, 13, 20, 0.85)'; bctx.fillRect(x, y, 466, 126);
+        bctx.strokeStyle = color; bctx.lineWidth = 1.5; bctx.strokeRect(x, y, 466, 126);
+
+        bctx.fillStyle = color; bctx.font = 'bold 12px monospace'; bctx.fillText(id, x + 14, y + 26);
+        bctx.fillStyle = '#F8FAFC'; bctx.font = 'bold 13px sans-serif';
+        const displayTitle = title.length > 40 ? title.substring(0, 38) + '...' : title;
+        bctx.fillText(displayTitle, x + 14, y + 54);
+
+        bctx.fillStyle = '#94A3B8'; bctx.font = '11px sans-serif';
+        bctx.fillText(`Assigned: ${agent} • Rev: REVIEWER`, x + 14, y + 82);
+
+        bctx.fillStyle = color; bctx.font = 'bold 10px monospace';
+        bctx.fillText(statusText, x + 14, y + 108);
+      }
+
+      if (cachedJobs.length > 0) {
+        let qCount = 0, pCount = 0, bCount = 0, cCount = 0;
+        cachedJobs.slice(0, 20).forEach(j => {
+          const st = (j.status || 'QUEUED').toUpperCase();
+          if ((st === 'QUEUED' || st === 'TRIAGED') && qCount < 5) {
+            drawCard(0, 160 + qCount * 140, j.job_id, j.title, j.assigned_agent || 'UNASSIGNED', '#38BDF8', 'STATUS: IN_BACKLOG');
+            qCount++;
+          } else if ((st === 'IN_PROGRESS' || st === 'ACTIVE') && pCount < 5) {
+            drawCard(1, 160 + pCount * 140, j.job_id, j.title, j.assigned_agent || 'ACTIVE', '#F59E0B', 'STATUS: ACTIVE_DEV');
+            pCount++;
+          } else if ((st === 'BLOCKED' || st.includes('APPROVAL')) && bCount < 5) {
+            drawCard(2, 160 + bCount * 140, j.job_id, j.title, j.assigned_agent || 'BLOCKED', '#EF4444', 'REQ: OWNER APPROVAL');
+            bCount++;
+          } else if ((st === 'COMPLETED' || st === 'VERIFIED' || st === 'PROTOTYPE_DEMO_READY') && cCount < 5) {
+            const badgeText = st === 'PROTOTYPE_DEMO_READY' ? 'STATUS: PROTOTYPE_READY' : 'STATUS: VERIFIED_PASS';
+            const badgeCol = st === 'PROTOTYPE_DEMO_READY' ? '#38BDF8' : '#10B981';
+            drawCard(3, 160 + cCount * 140, j.job_id, j.title, j.assigned_agent || 'REVIEWER', badgeCol, badgeText);
+            cCount++;
+          }
+        });
+      } else {
+        const isDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+        if (isDemo) {
+          drawCard(0, 160, 'DEMO-0042', 'Pair thermostat with the app', 'INTEGRATION', '#38BDF8', 'STATUS: DEMO_QUEUED');
+          drawCard(1, 160, 'DEMO-0018', 'Cut idle current below 20 uA', 'PERFORMANCE', '#F59E0B', 'STATUS: DEMO_DEV');
+          drawCard(2, 160, 'DEMO-0009', 'Change default setpoint range', 'ORCHESTRATOR', '#EF4444', 'REQ: OWNER APPROVAL');
+          drawCard(3, 160, 'DEMO-0003', 'Schedule engine refactor', 'IMPLEMENTER', '#10B981', 'DEMO EVALUATED');
+        } else {
+          // Live Operational Display: No fabricated jobs
+          bctx.fillStyle = '#94A3B8';
+          bctx.font = 'bold 20px monospace';
+          bctx.textAlign = 'center';
+          bctx.fillText('NO ACTIVE TASKS REPORTED IN QUEUE', 1024, 460);
+          bctx.font = '14px sans-serif';
+          bctx.fillText('Authenticating via Owner Desk connects live engineering tasks. Append ?demo=1 for preview fixtures.', 1024, 500);
+          bctx.textAlign = 'left';
+        }
+      }
+
+      boardTex.needsUpdate = true;
+    }
+
+    async function fetchRealJobs() {
+      try {
+        const res = await fetch('/api/jobs', { credentials: 'same-origin', cache: 'no-store' });
+        if (res.ok) {
+          const jobs = await res.json();
+          renderBoardWithJobs(Array.isArray(jobs) ? jobs : []);
+          populateMissionTaskList(Array.isArray(jobs) ? jobs : []);
+        } else { renderBoardWithJobs([]); }
+      } catch (e) { renderBoardWithJobs([]); }
+    }
+    fetchRealJobs();
+    setInterval(fetchRealJobs, 10000);
+
+    // 9. ZONE 4: 9 RADIALLY ALIGNED SPECIALIST WORKSTATIONS
+    const workstationsGroup = new THREE.Group();
+    const agentMeshesMap = {};
+
+    window.__hqCenterMonitors = window.__hqCenterMonitors || {};
+
+    function createSchematicMonitor(title, wireframeText, glowHex) {
+      const mon = new THREE.Group();
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.28, 12), matDarkTitanium);
+      stand.position.y = 0.14; mon.add(stand);
+
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.62, 0.03), matDarkTitanium);
+      frame.position.y = 0.42; mon.add(frame);
+
+      const c = document.createElement('canvas');
+      c.width = 400; c.height = 240;
+      const ctx = c.getContext('2d');
+
+      function drawScreen(tTitle, lines, colorHex) {
+        ctx.fillStyle = '#050D18'; ctx.fillRect(0, 0, 400, 240);
+        ctx.strokeStyle = colorHex; ctx.lineWidth = 2; ctx.strokeRect(4, 4, 392, 232);
+        ctx.fillStyle = colorHex; ctx.font = 'bold 13px monospace'; ctx.fillText(tTitle, 14, 30);
+
+        ctx.strokeStyle = colorHex; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let x = 14; x < 380; x += 12) {
+          const y = 140 + Math.sin(x * 0.06) * 40 + Math.cos(x * 0.15) * 15;
+          if (x === 14) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = '#CBD5E1'; ctx.font = '10px monospace';
+        lines.forEach((t, i) => ctx.fillText(t, 14, 185 + i * 18));
+      }
+
+      drawScreen(title, wireframeText, glowHex);
+
+      const tex = new THREE.CanvasTexture(c);
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.58), new THREE.MeshBasicMaterial({ map: tex }));
+      scr.position.set(0, 0.42, 0.018); mon.add(scr);
+
+      mon.updateContent = function(newTitle, newLines, newColor) {
+        drawScreen(newTitle, newLines, newColor || glowHex);
+        tex.needsUpdate = true;
+      };
+
+      return mon;
+    }
+
+    function createSpecialistWorkstation(agent) {
+      const stGroup = new THREE.Group();
+      stGroup.position.set(agent.pos.x, 0, agent.pos.z);
+      stGroup.rotation.y = agent.rotY;
+
+      // Illuminated Glass Desk
+      const deskGroup = new THREE.Group();
+      const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.08, 1.5), matEngineerGlass);
+      deskTop.position.set(0, 0.88, 0); deskTop.castShadow = true; deskTop.receiveShadow = true;
+      deskGroup.add(deskTop);
+
+      const edgeMat = new THREE.MeshBasicMaterial({ color: agent.accentColor });
+      const edgeGlow = new THREE.Mesh(new THREE.BoxGeometry(3.64, 0.02, 1.54), edgeMat);
+      edgeGlow.position.set(0, 0.88, 0); deskGroup.add(edgeGlow);
+
+      const troughLight = new THREE.PointLight(agent.accentColor, 2.8, 4.5);
+      troughLight.position.set(0, 0.78, 0); deskGroup.add(troughLight);
+
+      const eLegL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.88, 1.3), matDarkTitanium);
+      eLegL.position.set(-1.6, 0.44, 0); deskGroup.add(eLegL);
+      const eLegR = eLegL.clone(); eLegR.position.set(1.6, 0.44, 0); deskGroup.add(eLegR);
+
+      // 3 Curved Monitors
+      const mons = agent.monitors;
+      const m1 = createSchematicMonitor(mons[0].title, mons[0].lines, mons[0].col);
+      m1.position.set(-1.0, 0.92, -0.15); m1.rotation.y = 0.28; deskGroup.add(m1);
+
+      const m2 = createSchematicMonitor(mons[1].title, mons[1].lines, mons[1].col);
+      m2.position.set(0, 0.92, -0.32); deskGroup.add(m2);
+
+      const m3 = createSchematicMonitor(mons[2].title, mons[2].lines, mons[2].col);
+      m3.position.set(1.0, 0.92, -0.15); m3.rotation.y = -0.28; deskGroup.add(m3);
+
+      window.__hqCenterMonitors[agent.id] = m2;
+
+      const kb = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.02, 0.18), new THREE.MeshStandardMaterial({ color: 0x1E242C, roughness: 0.7 }));
+      kb.position.set(0, 0.93, 0.25); deskGroup.add(kb);
+
+      const mouseMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.12), new THREE.MeshStandardMaterial({ color: 0x1E242C, roughness: 0.6 }));
+      mouseMesh.position.set(0.38, 0.93, 0.25); deskGroup.add(mouseMesh);
+
+      stGroup.add(deskGroup);
+
+      // Ergonomic Task Chair
+      const taskChair = new THREE.Group();
+      const taskChairMat = new THREE.MeshStandardMaterial({ color: 0x11161D, roughness: 0.65 });
+      const chromeMat = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, metalness: 0.92, roughness: 0.2 });
+
+      const cSeat = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.1, 0.62), taskChairMat);
+      cSeat.position.y = 0.52; taskChair.add(cSeat);
+
+      const cBack = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.75, 0.1), taskChairMat);
+      cBack.position.set(0, 0.92, 0.26); cBack.rotation.x = 0.08; taskChair.add(cBack);
+
+      const cStem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.48, 16), chromeMat);
+      cStem.position.y = 0.26; taskChair.add(cStem);
+
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * Math.PI * 2) / 5;
+        const cLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 8), chromeMat);
+        cLeg.rotation.z = Math.PI / 2;
+        cLeg.position.set(Math.cos(angle) * 0.175, 0.05, Math.sin(angle) * 0.175);
+        cLeg.rotation.y = -angle; taskChair.add(cLeg);
+      }
+      taskChair.position.set(0, 0, 0.65);
+      stGroup.add(taskChair);
+
+      const downLight = new THREE.PointLight(0xFFF8EE, 3.2, 7.5);
+      downLight.position.set(0, 3.2, 0.3); stGroup.add(downLight);
+
+      const faceFillLight = new THREE.PointLight(0xE0F2FE, 2.2, 3.5);
+      faceFillLight.position.set(0, 1.35, 0.20); stGroup.add(faceFillLight);
+
+      deskTop.userData = { agentId: agent.id };
+      interactiveObjects.push(deskTop);
+
+      workstationsGroup.add(stGroup);
+    }
+
+    ROSTER.forEach(agent => createSpecialistWorkstation(agent));
+    scene.add(workstationsGroup);
+
+    // 10. CHARACTERS (simple primitives; the third-party character models are not part of the public copy)
+    const agentControllers = {};
+    let globalMixers = [];
+    let currentActivityMode = 'DESK_WORK';
+
+    // URL Query Parameters support
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    const envParam = urlParams.get('env');
+    const modeParam = urlParams.get('mode');
+
+    // Specialist visual styles (dark tailored uniforms, hair, small head nodes, illuminated chest badges)
+    const SPECIALIST_STYLES = {
+      ORCHESTRATOR: { hairColor: 0x151515, nodeFinish: 0xD4AF37, topColor: 0x0A1220, bottomColor: 0x0E141E, shoeColor: 0x080A0E, trimColor: 0xD4AF37 },
+      ANALYST:      { hairColor: 0x2A1D15, nodeFinish: 0xCBD5E1, topColor: 0x08182B, bottomColor: 0x0E1520, shoeColor: 0x080A0E, trimColor: 0x00E5FF },
+      PERFORMANCE:  { hairColor: 0x121212, nodeFinish: 0xCBD5E1, topColor: 0x0B1E19, bottomColor: 0x10171D, shoeColor: 0x080A0E, trimColor: 0x10B981 },
+      VERIFICATION: { hairColor: 0x2D1E16, nodeFinish: 0xCBD5E1, topColor: 0x0C1A2E, bottomColor: 0x0F1522, shoeColor: 0x080A0E, trimColor: 0x38BDF8 },
+      INTEGRATION:  { hairColor: 0x1F1812, nodeFinish: 0xD4AF37, topColor: 0x181714, bottomColor: 0x121210, shoeColor: 0x080A0E, trimColor: 0xEAB308 },
+      IMPLEMENTER:  { hairColor: 0x222224, nodeFinish: 0xB87333, topColor: 0x1F1412, bottomColor: 0x151110, shoeColor: 0x080A0E, trimColor: 0xF97316 },
+      REQUIREMENTS: { hairColor: 0x1A1412, nodeFinish: 0xCBD5E1, topColor: 0x16132A, bottomColor: 0x12101E, shoeColor: 0x080A0E, trimColor: 0xFB923C },
+      REVIEWER:     { hairColor: 0x111116, nodeFinish: 0x475569, topColor: 0x121118, bottomColor: 0x0D0C12, shoeColor: 0x080A0E, trimColor: 0xA855F7 },
+      QUALITY:      { hairColor: 0x141818, nodeFinish: 0x94A3B8, topColor: 0x0C1B1B, bottomColor: 0x0E1616, shoeColor: 0x080A0E, trimColor: 0x14B8A6 }
+    };
+
+    function createHair(hairColor = 0x181412) {
+      const hairGroup = new THREE.Group();
+      hairGroup.position.set(0, 0.115, 0.01);
+      const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.88, metalness: 0.10 });
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.096, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
+      dome.scale.set(0.97, 1.04, 1.08); hairGroup.add(dome);
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.092, 20, 14), hairMat);
+      crown.position.set(0, 0.035, 0.005); crown.scale.set(0.95, 0.40, 1.05); hairGroup.add(crown);
+      const fringe = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.098, 0.025, 28, 1, false, -Math.PI * 0.42, Math.PI * 0.84), hairMat);
+      fringe.position.set(0, 0.01, 0.012); fringe.rotation.y = Math.PI * 0.52; fringe.rotation.x = -0.15; hairGroup.add(fringe);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.075, 0.06, 20, 1, false, -Math.PI * 0.5, Math.PI), hairMat);
+      neck.position.set(0, -0.045, -0.035); neck.rotation.y = Math.PI * 0.5; neck.rotation.x = 0.22; hairGroup.add(neck);
+      return hairGroup;
+    }
+
+    function createCyberAccents(accentColor = 0xF59E0B, nodeFinish = 0xD4AF37) {
+      const g = new THREE.Group();
+      const nodeMat = new THREE.MeshStandardMaterial({ color: nodeFinish, metalness: 0.95, roughness: 0.18 });
+      const ledMat = new THREE.MeshStandardMaterial({ color: accentColor, emissive: accentColor, emissiveIntensity: 2.5 });
+      const node = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.005, 16), nodeMat);
+      node.rotation.z = Math.PI / 2; node.position.set(0.092, 0.095, -0.005);
+      const led = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.006, 12), ledMat);
+      led.rotation.z = Math.PI / 2; led.position.set(0.093, 0.095, -0.005);
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.035, 8), nodeMat);
+      stem.rotation.x = Math.PI * 0.42; stem.position.set(0.091, 0.080, 0.015);
+      g.add(node, led, stem);
+      return g;
+    }
+
+    function createChestBadge(accentColor = 0xF59E0B) {
+      const g = new THREE.Group();
+      g.position.set(0.075, 0.12, 0.115);
+      const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.065, 0.022, 0.005),
+        new THREE.MeshStandardMaterial({ color: 0x1E242C, metalness: 0.85, roughness: 0.25 })
+      );
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.062, 0.004, 0.006),
+        new THREE.MeshStandardMaterial({ color: accentColor, emissive: accentColor, emissiveIntensity: 2.2 })
+      );
+      stripe.position.set(0, -0.006, 0.001);
+      g.add(plate, stripe);
+      return g;
+    }
+
+    function applyStandingPosture(bones, restPose) {
+      if (bones && bones.__mannequin) { bones.__mannequin.setSeated(false); return; }
+      if (restPose) {
+        Object.keys(bones).forEach(name => {
+          if (restPose[name]) {
+            bones[name].position.copy(restPose[name].position);
+            bones[name].quaternion.copy(restPose[name].quaternion);
+          }
+        });
+      }
+    }
+
+    // Seated arm pose used by the forearm micro-motion below (the mannequin ignores the arm values).
+    const SEATED_ARM = { upper: [1.643, 0.957, -0.959], fore: [2.009, 0.866, -0.22], hand: [-0.373, 2.857, 0.682] };
+    function applySeatedPosture(bones, restPose) {
+      if (bones && bones.__mannequin) { bones.__mannequin.setSeated(true); return; }
+      applyStandingPosture(bones, restPose);
+      if (bones['Hips']) { bones['Hips'].position.set(0, 0.65, -0.02); }
+      if (bones['LeftUpLeg']) { bones['LeftUpLeg'].rotation.set(-1.42, 0.08, 0); }
+      if (bones['RightUpLeg']) { bones['RightUpLeg'].rotation.set(-1.42, -0.08, 0); }
+      if (bones['LeftLeg']) { bones['LeftLeg'].rotation.set(-1.75, 0, 0); }
+      if (bones['RightLeg']) { bones['RightLeg'].rotation.set(-1.75, 0, 0); }
+      if (bones['LeftFoot']) { bones['LeftFoot'].rotation.set(0.65, 0, 0); }
+      if (bones['RightFoot']) { bones['RightFoot'].rotation.set(0.65, 0, 0); }
+      const P = SEATED_ARM;
+      if (bones['LeftArm']) { bones['LeftArm'].rotation.set(P.upper[0], -P.upper[1], -P.upper[2]); }
+      if (bones['RightArm']) { bones['RightArm'].rotation.set(P.upper[0], P.upper[1], P.upper[2]); }
+      if (bones['LeftForeArm']) { bones['LeftForeArm'].rotation.set(P.fore[0], -P.fore[1], -P.fore[2]); }
+      if (bones['RightForeArm']) { bones['RightForeArm'].rotation.set(P.fore[0], P.fore[1], P.fore[2]); }
+      if (bones['LeftHand']) { bones['LeftHand'].rotation.set(P.hand[0], -P.hand[1], -P.hand[2]); }
+      if (bones['RightHand']) { bones['RightHand'].rotation.set(P.hand[0], P.hand[1], P.hand[2]); }
+    }
+
+    // Simple mannequin built from primitives. Head and torso groups are exposed as bones['Head'] / bones['Spine'] so the
+    // existing micro-motion code can move them; bones.__mannequin switches between seated and standing.
+    function buildMannequin(style) {
+      const root = new THREE.Group();
+      const topMat = new THREE.MeshStandardMaterial({ color: style.topColor, roughness: 0.65, metalness: 0.15 });
+      const bottomMat = new THREE.MeshStandardMaterial({ color: style.bottomColor, roughness: 0.70, metalness: 0.08 });
+      const shoeMat = new THREE.MeshStandardMaterial({ color: style.shoeColor, roughness: 0.35, metalness: 0.40 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xC8A589, roughness: 0.55 });
+      const hips = new THREE.Group(); root.add(hips);
+      hips.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.22), bottomMat));
+      const spine = new THREE.Group(); spine.position.y = 0.07; hips.add(spine);
+      const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.32, 6, 16), topMat);
+      torso.scale.set(1, 1, 0.65); torso.position.y = 0.26; spine.add(torso);
+      const spine2 = new THREE.Group(); spine2.position.y = 0.26; spine.add(spine2);
+      const head = new THREE.Group(); head.position.y = 0.55; spine.add(head);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 12), skinMat); neck.position.y = 0.0; head.add(neck);
+      const skull = new THREE.Mesh(new THREE.SphereGeometry(0.1, 24, 18), skinMat); skull.scale.set(0.9, 1.1, 1.0); skull.position.y = 0.11; head.add(skull);
+      const arms = [];
+      [-1, 1].forEach(sx => {
+        const arm = new THREE.Group(); arm.position.set(sx * 0.22, 0.44, 0); spine.add(arm);
+        const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.24, 4, 10), topMat); upper.position.y = -0.15; arm.add(upper);
+        const fore = new THREE.Group(); fore.position.y = -0.3; arm.add(fore);
+        const foreMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.22, 4, 10), topMat); foreMesh.position.y = -0.13; fore.add(foreMesh);
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), skinMat); hand.position.y = -0.28; fore.add(hand);
+        arms.push({ arm, fore });
+      });
+      const legs = [];
+      [-1, 1].forEach(sx => {
+        const thigh = new THREE.Group(); thigh.position.set(sx * 0.1, -0.05, 0); hips.add(thigh);
+        const thighMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.32, 4, 10), bottomMat); thighMesh.position.y = -0.21; thigh.add(thighMesh);
+        const knee = new THREE.Group(); knee.position.y = -0.43; thigh.add(knee);
+        const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.32, 4, 10), bottomMat); shin.position.y = -0.21; knee.add(shin);
+        const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.24), shoeMat); shoe.position.set(0, -0.42, 0.05); knee.add(shoe);
+        legs.push({ thigh, knee });
+      });
+      function setSeated(seated) {
+        hips.position.y = seated ? 0.6 : 0.93;
+        legs.forEach(l => { l.thigh.rotation.x = seated ? -Math.PI / 2 : 0; l.knee.rotation.x = seated ? Math.PI / 2 : 0; });
+        arms.forEach(a => { a.arm.rotation.x = seated ? -0.5 : 0; a.fore.rotation.x = seated ? -0.9 : 0; });
+      }
+      setSeated(true);
+      return { root, bones: { Head: head, Spine: spine, Spine2: spine2, __mannequin: { setSeated } } };
+    }
+
+    ROSTER.forEach((agent) => {
+      const style = SPECIALIST_STYLES[agent.id] || SPECIALIST_STYLES.ORCHESTRATOR;
+      const { root: clone, bones } = buildMannequin(style);
+
+      // Position at radially aligned task chair
+      const chairOffset = new THREE.Vector3(Math.sin(agent.rotY) * 0.65, 0, Math.cos(agent.rotY) * 0.65);
+      const seatedPos = new THREE.Vector3(agent.pos.x, 0, agent.pos.z).add(chairOffset);
+      const seatedRotY = agent.rotY + Math.PI;
+      clone.position.copy(seatedPos);
+      clone.rotation.y = seatedRotY;
+
+      clone.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.userData = { agentId: agent.id };
+          interactiveObjects.push(child);
+        }
+      });
+
+      bones['Head'].add(createHair(style.hairColor));
+      bones['Head'].add(createCyberAccents(agent.accentColor, style.nodeFinish));
+      bones['Spine2'].add(createChestBadge(agent.accentColor));
+
+      scene.add(clone);
+      agentMeshesMap[agent.id] = clone;
+
+      agentControllers[agent.id] = {
+        agent,
+        model: clone,
+        bones,
+        restPose: {},
+        mixer: null,
+        actions: {},
+        isSeated: true,
+        deskPos: seatedPos,
+        deskRot: seatedRotY,
+        boardPos: new THREE.Vector3(agent.boardPos.x, 0, agent.boardPos.z),
+        briefingPos: new THREE.Vector3(agent.briefingPos.x, 0, agent.briefingPos.z)
+      };
+    });
+    {
+      const diag = document.getElementById('hud-diagnostics');
+      if (diag) diag.textContent = `WebGL 2.0 (Active) | 9 specialist stations rendered | health: see name tags`;
+      if (modeParam) setTimeout(() => setActivityMode(modeParam, true), 0);
+    }
+
+    // 11. Multi-Agent Activity State Machine
+    function setActivityMode(mode, immediate = false) {
+      currentActivityMode = mode;
+      const banner = document.getElementById('hud-activity-banner');
+      const btnDesk = document.getElementById('btn-mode-desk');
+      const btnBoard = document.getElementById('btn-mode-board');
+      const btnBrief = document.getElementById('btn-mode-briefing');
+
+      [btnDesk, btnBoard, btnBrief].forEach(b => b && b.classList.remove('active'));
+
+      if (mode === 'DESK_WORK') {
+        if (btnDesk) btnDesk.classList.add('active');
+        if (banner) banner.textContent = '💻 DESK VIEW • 9 SPECIALIST STATIONS • LIVE HEALTH ON EACH NAME TAG';
+      } else if (mode === 'BOARD_REVIEW') {
+        if (btnBoard) btnBoard.classList.add('active');
+        if (banner) banner.textContent = '📋 BOARD REVIEW • SCRIPTED DEMONSTRATION VIEW, NOT LIVE ACTIVITY';
+      } else if (mode === 'OWNER_BRIEFING') {
+        if (btnBrief) btnBrief.classList.add('active');
+        if (banner) banner.textContent = '🗣️ CENTRAL BRIEFING • SCRIPTED DEMONSTRATION VIEW, NOT LIVE ACTIVITY';
+      }
+
+      if (immediate) {
+        Object.values(agentControllers).forEach(ctrl => {
+          const { agent, model, bones, restPose } = ctrl;
+          if (!model) return;
+          const isReviewer = (agent.id === 'ORCHESTRATOR' || agent.id === 'ANALYST' || agent.id === 'REVIEWER' || agent.id === 'PERFORMANCE');
+          const isBriefing = (agent.id === 'ORCHESTRATOR' || agent.id === 'REQUIREMENTS' || agent.id === 'REVIEWER');
+          if (mode === 'BOARD_REVIEW' && isReviewer) {
+            model.position.copy(ctrl.boardPos);
+            model.rotation.y = Math.PI / 2;
+            applyStandingPosture(bones, restPose);
+            ctrl.isSeated = false;
+          } else if (mode === 'OWNER_BRIEFING' && isBriefing) {
+            model.position.copy(ctrl.briefingPos);
+            model.rotation.y = Math.atan2(ctrl.briefingPos.x - 0, ctrl.briefingPos.z - (-3.8)) + Math.PI;
+            applyStandingPosture(bones, restPose);
+            ctrl.isSeated = false;
+          } else {
+            model.position.copy(ctrl.deskPos);
+            model.rotation.y = ctrl.deskRot;
+            applySeatedPosture(bones, restPose);
+            ctrl.isSeated = true;
+          }
+        });
+      }
+    }
+
+    document.getElementById('btn-mode-desk').addEventListener('click', () => setActivityMode('DESK_WORK'));
+    document.getElementById('btn-mode-board').addEventListener('click', () => setActivityMode('BOARD_REVIEW'));
+    document.getElementById('btn-mode-briefing').addEventListener('click', () => setActivityMode('OWNER_BRIEFING'));
+
+    // Environment Switchers
+    document.getElementById('btn-env-sunset').addEventListener('click', () => {
+      document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-env-sunset').classList.add('active');
+      renderDynamicEnvironment('sunset');
+    });
+    document.getElementById('btn-env-daylight').addEventListener('click', () => {
+      document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-env-daylight').classList.add('active');
+      renderDynamicEnvironment('daylight');
+    });
+    document.getElementById('btn-env-midnight').addEventListener('click', () => {
+      document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-env-midnight').classList.add('active');
+      renderDynamicEnvironment('midnight');
+    });
+
+    // PREVIEW: Claude and Gemini workstations beside the owner dais (additive; see ai_engineers_preview.js)
+    const aiEngineers = installAIEngineers({
+      THREE, scene, interactiveObjects, camera, roster: ROSTER, getController: (id) => agentControllers[id],
+    });
+    window.__hqPreview = { SEATED_ARM, applySeatedPosture, ROSTER, agentControllers, camera, controls, aiEngineers, interactiveObjects, workstationsGroup };   // PREVIEW: inspection handle
+    // Briefing table: product hologram and three read-only views (see briefing_table.js)
+    const briefingTable = installBriefingTable({
+      THREE, camera, interactiveObjects, tableGroup: briefingTableGroup, oldHolo: tableHoloGroup, tableMeshes: [tableBase, tableTop],
+      flyTo: (p, l) => { autoDriftActive = false; animateCamera(p, l); },
+      onReturn: () => setActivePreset('overview')
+    });
+    window.__hqTable = briefingTable;
+    // Live activity: speech bubbles above workstations, read from ./live_events/events.jsonl only.
+    const liveAnchor = new THREE.Vector3();
+    const liveEvents = installLiveEvents({
+      THREE, camera,
+      getAnchor: (id) => {
+        const ctrl = agentControllers[id];
+        if (ctrl) return liveAnchor.copy(ctrl.model.position).setY(ctrl.model.position.y + 2.95);
+        const st = aiEngineers.stations[id];
+        if (st && st.group) { st.group.getWorldPosition(liveAnchor); liveAnchor.y += 2.75; return liveAnchor; }
+        return null;
+      }
+    });
+    window.__hqLive = liveEvents;
+    // Simulation Vault: its own holographic table on free floor; opens the library and embedded simulations.
+    const simVault = installSimulationVault({
+      THREE, scene, camera, interactiveObjects,
+      flyTo: (p, l) => { autoDriftActive = false; animateCamera(p, l); },
+      onReturn: () => setActivePreset('overview')
+    });
+    window.__hqVault = simVault;
+
+    // 12. Raycasting, Dossier Drawer, and Operational Surface
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const drawer = document.getElementById('owner-agent-drawer');
+    const btnCloseDrawer = document.getElementById('btn-close-drawer');
+    const missionOverlay = document.getElementById('mission-control-overlay');
+    const btnCloseMission = document.getElementById('btn-close-mission');
+
+    btnCloseDrawer.addEventListener('click', () => { drawer.style.display = 'none'; });
+    btnCloseMission.addEventListener('click', () => { missionOverlay.style.display = 'none'; });
+    document.getElementById('btn-open-mission-control').addEventListener('click', () => { missionOverlay.style.display = 'flex'; });
+
+    let currentSelectedAgent = ROSTER[0];
+
+    function openAgentDossier(agent) {
+      aiEngineers.resetDrawer();   // PREVIEW: restore the specialist cards if an AI engineer panel was open
+      currentSelectedAgent = agent;
+      document.getElementById('drawer-name').textContent = agent.name.toUpperCase();
+      document.getElementById('drawer-role').textContent = agent.role;
+      document.getElementById('drawer-station').textContent = agent.stationName;
+      document.getElementById('drawer-model').textContent = agent.model;
+      document.getElementById('drawer-reviewer').textContent = agent.reviewer;
+      document.getElementById('drawer-summary').textContent = agent.summary;
+      document.getElementById('drawer-task-title').textContent = agent.currentTask;
+      document.getElementById('drawer-task-id').textContent = agent.taskId;
+      document.getElementById('drawer-domain').textContent = agent.domain;
+
+      const badge = document.getElementById('drawer-avatar');
+      badge.textContent = agent.id.substring(0, 2);
+      badge.style.color = agent.accentHex;
+      badge.style.borderColor = agent.accentHex;
+
+      document.getElementById('agent-hud-name').innerHTML = `${agent.name.toUpperCase()} &bull; ${agent.role}`;
+      document.getElementById('agent-hud-room').textContent = `Station: ${agent.stationName} (${agent.room})`;
+      document.getElementById('agent-hud-action').innerHTML = `
+        &gt; Current Task: ${agent.taskId}<br>
+        &gt; Model: ${agent.model}<br>
+        &gt; Independent Reviewer: ${agent.reviewer}<br>
+        &gt; Domain: ${agent.domain}
+      `;
+
+      aiEngineers.showSpecialistStatus(agent.id);   // PREVIEW: live health and activity from Mission Control
+      liveEvents.focus(agent.id);   // show this workstation's recorded live activity, if any
+      drawer.style.display = 'flex';
+    }
+
+    document.getElementById('btn-focus-station').addEventListener('click', () => {
+      drawer.style.display = 'none';
+      if (currentSelectedAgent) jumpToAgentStation(currentSelectedAgent.id.toLowerCase());
+    });
+
+    // Populate Level 3 Job Details & Owner Actions
+    function populateMissionTaskList(jobs) {
+      const container = document.getElementById('mission-task-list');
+      if (!container) return;
+      container.innerHTML = '';
+
+      (jobs || []).slice(0, 16).forEach((j, idx) => {
+        const item = document.createElement('div');
+        item.className = 'job-list-card' + (idx === 0 ? ' selected' : '');
+        const stCol = (j.status === 'BLOCKED') ? '#EF4444' : (j.status === 'ACTIVE' ? '#F59E0B' : '#38BDF8');
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+            <span style="color: #64748B; font-family: monospace;">${j.job_id}</span>
+            <span style="color: ${stCol}; font-weight: 700;">${j.status || 'QUEUED'}</span>
+          </div>
+          <div style="font-weight: 700; font-size: 13px; color: #F8FAFC; margin-bottom: 4px;">${j.title}</div>
+          <div style="font-size: 11px; color: #94A3B8;">Assigned: <strong style="color: #38BDF8;">${j.assigned_agent || 'UNASSIGNED'}</strong> &bull; Domain: ${j.domain || 'SYSTEMS'}</div>
+        `;
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.job-list-card').forEach(c => c.classList.remove('selected'));
+          item.classList.add('selected');
+          displayJobDetail(j);
+        });
+        container.appendChild(item);
+      });
+
+      if (jobs && jobs.length > 0) displayJobDetail(jobs[0]);
+    }
+
+    function displayJobDetail(j) {
+      selectedJob = j;
+      document.getElementById('detail-job-id').textContent = j.job_id;
+      document.getElementById('detail-job-title').textContent = j.title;
+
+      const stPill = document.getElementById('detail-job-status');
+      stPill.textContent = j.status || 'QUEUED';
+      if (j.status === 'BLOCKED') {
+        stPill.style.color = '#EF4444'; stPill.style.background = 'rgba(239, 68, 68, 0.2)';
+      } else if (j.status === 'ACTIVE') {
+        stPill.style.color = '#F59E0B'; stPill.style.background = 'rgba(245, 158, 11, 0.2)';
+      } else {
+        stPill.style.color = '#38BDF8'; stPill.style.background = 'rgba(56, 189, 248, 0.2)';
+      }
+
+      document.getElementById('detail-assigned-agent').textContent = j.assigned_agent || 'UNASSIGNED';
+      document.getElementById('detail-domain').textContent = j.domain || 'SYSTEMS';
+
+      // Approval Requirement Logic
+      const appReq = document.getElementById('detail-approval-req');
+      if (j.status === 'BLOCKED' || (j.title && j.title.toLowerCase().includes('baseline'))) {
+        appReq.textContent = 'TIER 1 (EITHER OWNER)';
+        appReq.style.color = '#EF4444';
+      } else {
+        appReq.textContent = 'ROUTINE LOCAL AUTONOMOUS (ORCHESTRATOR)';
+        appReq.style.color = '#10B981';
+      }
+
+      // Blockers text
+      const blockEl = document.getElementById('detail-blockers');
+      if (j.status === 'BLOCKED') {
+        blockEl.innerHTML = `⚠️ <strong>GOVERNANCE BLOCK:</strong> Changing an approved baseline requires owner approval. Cannot proceed autonomously.`;
+      } else {
+        blockEl.innerHTML = `&bull; Zero blocking dependencies. Local development clean.`;
+      }
+
+      // Evidence text
+      const evEl = document.getElementById('detail-evidence');
+      if (evEl && j.execution_evidence) {
+        evEl.textContent = typeof j.execution_evidence === 'string' ? j.execution_evidence : JSON.stringify(j.execution_evidence);
+      }
+
+      const pText = document.getElementById('detail-progress-text');
+      const pBar = document.getElementById('detail-progress-bar');
+      if (j.progress && pText) pText.textContent = typeof j.progress === 'string' ? j.progress : JSON.stringify(j.progress);
+      if (pBar) {
+        if (j.status === 'COMPLETED' || j.status === 'PROTOTYPE_DEMO_READY' || j.status === 'VERIFIED') pBar.style.width = '100%';
+        else if (j.status === 'IN_PROGRESS' || j.status === 'ACTIVE') pBar.style.width = '65%';
+        else pBar.style.width = '20%';
+      }
+
+      // Hide previous action notice
+      const fb = document.getElementById('action-feedback-box');
+      fb.style.display = 'none';
+    }
+
+    window.handleOwnerAction = function(actionType) {
+      const fb = document.getElementById('action-feedback-box');
+      fb.style.display = 'block';
+
+      if (actionType === 'RECOMMENDATION') {
+        fb.style.background = '#1A180E'; fb.style.border = '1px solid #D4AF37'; fb.style.color = '#FDE68A';
+        fb.innerHTML = `🤖 <strong>ORCHESTRATOR RECOMMENDATION (template):</strong> "For task ${selectedJob.job_id} ('${selectedJob.title}'), ${selectedJob.assigned_agent} should attach test evidence before asking the Reviewer for a verdict."`;
+      } else if (actionType === 'HOLD') {
+        fb.style.background = '#1F170E'; fb.style.border = '1px solid #F59E0B'; fb.style.color = '#FDE68A';
+        fb.innerHTML = `⏸️ <strong>SAFE PREVIEW:</strong> Task ${selectedJob.job_id} placed on administrative HOLD pending owner sync. No mutations committed.`;
+      } else if (actionType === 'APPROVE') {
+        fb.style.background = '#091C16'; fb.style.border = '1px solid #10B981'; fb.style.color = '#A7F3D0';
+        fb.innerHTML = `✅ <strong>APPROVAL PREVIEW:</strong> Owner authorization evaluated. Protected execution is DISABLED in preview mode.`;
+      } else if (actionType === 'REJECT') {
+        fb.style.background = '#1F0B0E'; fb.style.border = '1px solid #EF4444'; fb.style.color = '#FECACA';
+        fb.innerHTML = `❌ <strong>SAFE PREVIEW:</strong> Rejection recorded in memory audit trail. Rationale archived in local session state.`;
+      }
+    };
+
+    window.handleSafeTaskSubmit = function() {
+      const title = document.getElementById('task-input-title').value;
+      const comp = document.getElementById('task-input-complexity').value;
+      const prio = document.getElementById('task-input-priority').value;
+      const notice = document.getElementById('task-dispatch-notice');
+      notice.style.display = 'block';
+      notice.innerHTML = `✓ Safe Preview: Task "${title}" staged for ${currentSelectedAgent.name} (Complexity: ${comp}, Priority: ${prio}). Protected changes remain locked.`;
+      document.getElementById('task-input-title').value = '';
+    };
+
+    // Owner Interactive Toast & Diagnostic Modal Handlers
+    function showOwnerToast(message, type = 'INFO') {
+      const toast = document.getElementById('owner-toast');
+      const text = document.getElementById('owner-toast-text');
+      const icon = document.getElementById('owner-toast-icon');
+      if (!toast || !text) return;
+      text.textContent = message;
+      if (type === 'SUCCESS') {
+        toast.style.borderColor = '#10B981';
+        icon.textContent = '✅';
+      } else if (type === 'ERROR') {
+        toast.style.borderColor = '#EF4444';
+        icon.textContent = '⚠️';
+      } else {
+        toast.style.borderColor = '#38BDF8';
+        icon.textContent = '⚡';
+      }
+      toast.style.display = 'flex';
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
+
+    function showOwnerOfflineModal(title, message, targetUrl) {
+      const modal = document.getElementById('status-board-offline-modal');
+      if (!modal) return;
+      document.getElementById('offline-modal-title').textContent = title;
+      document.getElementById('offline-modal-body').innerHTML = message;
+      document.getElementById('offline-modal-url').textContent = targetUrl;
+      modal.style.display = 'flex';
+    }
+
+    window.closeOwnerOfflineModal = function() {
+      const modal = document.getElementById('status-board-offline-modal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    let lastClickedOwnerData = null;
+
+    window.retryLaunchStatusBoard = function() {
+      window.closeOwnerOfflineModal();
+      if (lastClickedOwnerData) openStatusBoard(lastClickedOwnerData);
+    };
+
+    function openStatusBoard(monitorData) {
+  lastClickedOwnerData = monitorData;
+
+  const ownerName = monitorData.ownerName || 'Owner';
+
+  // Status Board URL comes from hq-config.local.js (gitignored); see hq-config.example.js.
+  // remoteGatewayHost / remoteStatusBoardUrl are used only when the page is opened from that host.
+  const cfg = window.HQ_CONFIG || {};
+  const isRemoteHQ = !!cfg.remoteGatewayHost && window.location.hostname === cfg.remoteGatewayHost;
+  const url = (isRemoteHQ ? cfg.remoteStatusBoardUrl : cfg.statusBoardUrl) || '';
+
+  if (!url) {
+    showOwnerOfflineModal('Status Board not configured',
+      'No Status Board address is set. Copy <code>hq-config.example.js</code> to <code>hq-config.local.js</code> and set <code>statusBoardUrl</code>.', '(not configured)');
+    return;
+  }
+
+  const opened = window.open(url, '_blank');
+
+  if (opened) {
+    opened.opener = null;
+    showOwnerToast(`Opening Status Board for ${ownerName}...`, 'INFO');
+    return;
+  }
+
+  showOwnerToast('Browser blocked Status Board tab', 'ERROR');
+
+  showOwnerOfflineModal(
+    'Open Status Board',
+    `Your browser blocked the new tab.
+     <a href="${url}" target="_blank" rel="noopener noreferrer"
+     style="color:#38BDF8;font-weight:bold">
+     Open Status Board
+     </a>`,
+    url
+  );
+}
+function updateOwnerTooltip(clientX, clientY, monitorData) {
+      const tip = document.getElementById('owner-monitor-tooltip');
+      if (!tip) return;
+      if (!monitorData) {
+        tip.style.display = 'none';
+        return;
+      }
+      tip.style.display = 'block';
+      tip.style.left = clientX + 'px';
+      tip.style.top = clientY + 'px';
+      const titleEl = document.getElementById('fmt-title');
+      const subEl = document.getElementById('fmt-sub');
+      if (titleEl) {
+        titleEl.textContent = '⚡ ' + monitorData.ownerName.toUpperCase() + "'S PC CONSOLE";
+        titleEl.style.color = monitorData.colorHex;
+      }
+      if (subEl) {
+        subEl.textContent = 'Owner desk: sign in, dashboard, Status Board // Click to open';
+      }
+      tip.style.borderColor = monitorData.colorHex;
+      tip.style.boxShadow = `0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px ${monitorData.colorHex}44`;
+    }
+
+    let currentlyHoveredMonitor = null;
+
+    // Pointermove Listener for Hover Feedback
+    window.addEventListener('pointermove', (e) => {
+      if (e.clientY < 75) {
+        document.body.style.cursor = 'default';
+        updateOwnerTooltip(0, 0, null);
+        return;
+      }
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const hits = raycaster.intersectObjects(interactiveObjects, true);
+      let hitMonitor = null;
+      let hitInteractive = false;
+
+      if (hits.length > 0) {
+        let target = hits[0].object;
+        while (target && !target.userData?.isOwnerMonitor && !target.userData?.isMissionKiosk && !target.userData?.isCommandBoard && !target.userData?.agentId && !target.userData?.aiEngineerId) {
+          target = target.parent;
+        }
+        if (target && target.userData) {
+          hitInteractive = true;
+          if (target.userData.isOwnerMonitor) {
+            hitMonitor = target.userData;
+          }
+        }
+      }
+
+      document.body.style.cursor = hitInteractive ? 'pointer' : 'default';
+
+      if (currentlyHoveredMonitor !== hitMonitor) {
+        if (currentlyHoveredMonitor && currentlyHoveredMonitor.hoverBorder) {
+          currentlyHoveredMonitor.hoverBorder.material.visible = false;
+        }
+        if (hitMonitor && hitMonitor.hoverBorder) {
+          hitMonitor.hoverBorder.material.visible = true;
+        }
+        currentlyHoveredMonitor = hitMonitor;
+      }
+
+      updateOwnerTooltip(e.clientX, e.clientY, hitMonitor);
+    });
+
+    // Click Interaction Listener
+    window.addEventListener('click', (e) => {
+      if (e.clientY < 75) return;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const hits = raycaster.intersectObjects(interactiveObjects, true);
+      if (simVault.tryClick(hits)) return;        // Simulation Vault table
+      if (briefingTable.tryClick(hits)) return;   // TABLE PREVIEW
+      if (hits.length > 0) {
+        const hitObj = hits[0].object;
+        if (hitObj.userData && hitObj.userData.isCommandBoard) {
+          missionOverlay.style.display = 'flex';
+          return;
+        }
+        if (hitObj.userData && hitObj.userData.isMissionKiosk) { if (window.hqKioskOpen) window.hqKioskOpen(); return; }   // Mission Control kiosk
+        // Owner Monitor Click Check
+        let ownerTarget = hitObj;
+        while (ownerTarget && (!ownerTarget.userData || !ownerTarget.userData.isOwnerMonitor)) {
+          ownerTarget = ownerTarget.parent;
+        }
+        if (ownerTarget && ownerTarget.userData && ownerTarget.userData.isOwnerMonitor) {
+          if (window.hqDeskOpen) window.hqDeskOpen(ownerTarget.userData, () => openStatusBoard(ownerTarget.userData)); else openStatusBoard(ownerTarget.userData);
+          return;
+        }
+        if (aiEngineers.tryOpen(hitObj)) return;   // PREVIEW: Claude / Gemini workstation
+        let target = hitObj;
+        while (target && (!target.userData || !target.userData.agentId)) {
+          target = target.parent;
+        }
+        if (target && target.userData && target.userData.agentId) {
+          const matched = ROSTER.find(a => a.id === target.userData.agentId);
+          if (matched) {
+            openAgentDossier(matched);
+            return;
+          }
+        }
+      }
+    });
+
+    // 13. Camera Navigation Presets with Reduced Zoom & Comfortable Framing
+    const presets = {
+      overview:    { pos: { x: -5.5, y: 4.2, z: 8.5 }, look: { x: 0, y: 1.2, z: -1.0 } },
+      owner:       { pos: { x: 0, y: 2.8, z: 5.5 }, look: { x: 0, y: 1.0, z: -0.2 } },
+      board:       { pos: { x: 7.2, y: 3.4, z: 0 }, look: { x: 13.8, y: 3.4, z: 0 } },
+      holoTable:   { pos: { x: -2.8, y: 2.4, z: -1.8 }, look: { x: 0, y: 1.4, z: -3.8 } },
+      orchestrator: { pos: { x: -8.0, y: 2.2, z: -4.8 }, look: { x: -9.67, y: 1.2, z: -6.77 } },
+      analyst:      { pos: { x: -9.8, y: 2.2, z: 0 }, look: { x: -11.8, y: 1.2, z: 0 } },
+      performance:  { pos: { x: -3.8, y: 2.2, z: 8.8 }, look: { x: -4.99, y: 1.2, z: 10.69 } },
+      verification: { pos: { x: -7.8, y: 2.2, z: 5.4 }, look: { x: -9.67, y: 1.2, z: 6.77 } },
+      integration:  { pos: { x: 0.8, y: 2.2, z: 9.8 }, look: { x: 1.03, y: 1.2, z: 11.75 } },
+      implementer:  { pos: { x: 5.2, y: 2.2, z: 7.8 }, look: { x: 6.77, y: 1.2, z: 9.67 } },
+      requirements: { pos: { x: 5.2, y: 2.2, z: -7.8 }, look: { x: 6.77, y: 1.2, z: -9.67 } },
+      quality:      { pos: { x: 0.8, y: 2.2, z: -9.8 }, look: { x: 1.03, y: 1.2, z: -11.75 } },
+      reviewer:     { pos: { x: -3.8, y: 2.2, z: -8.8 }, look: { x: -4.99, y: 1.2, z: -10.69 } },
+      engineer:    { pos: { x: -8.8, y: 1.5, z: -8.2 }, look: { x: -10.1, y: 1.25, z: -7.05 } },
+      claude:      { pos: { x: -5.9, y: 2.3, z: 3.9 }, look: { x: -4.2, y: 1.15, z: 0.2 } },   // PREVIEW
+      gemini:      { pos: { x: 5.9, y: 2.3, z: 3.9 }, look: { x: 4.2, y: 1.15, z: 0.2 } }      // PREVIEW
+    };
+
+    const presetBtns = {
+      overview: document.getElementById('btn-cam-overview'),
+      owner: document.getElementById('btn-cam-owner'),
+      board: document.getElementById('btn-cam-board'),
+      holoTable: document.getElementById('btn-cam-holo-table'),
+      engineer: document.getElementById('btn-cam-engineer'),
+      claude: document.getElementById('btn-cam-claude'),   // PREVIEW
+      gemini: document.getElementById('btn-cam-gemini')    // PREVIEW
+    };
+
+    function animateCamera(targetPos, targetLookAt) {
+      const startPos = camera.position.clone();
+      const startLook = controls.target.clone();
+      let t = 0;
+      function step() {
+        t += 0.04;
+        if (t <= 1) {
+          const ease = 0.5 - 0.5 * Math.cos(t * Math.PI);
+          camera.position.lerpVectors(startPos, new THREE.Vector3(targetPos.x, targetPos.y, targetPos.z), ease);
+          controls.target.lerpVectors(startLook, new THREE.Vector3(targetLookAt.x, targetLookAt.y, targetLookAt.z), ease);
+          controls.update();
+          requestAnimationFrame(step);
+        } else {
+          camera.position.set(targetPos.x, targetPos.y, targetPos.z);
+          controls.target.set(targetLookAt.x, targetLookAt.y, targetLookAt.z);
+          controls.update();
+        }
+      }
+      step();
+    }
+
+    function setActivePreset(key) {
+      autoDriftActive = false;
+      Object.values(presetBtns).forEach(b => b && b.classList.remove('active'));
+      if (presetBtns[key]) presetBtns[key].classList.add('active');
+      const p = presets[key];
+      if (p) animateCamera(p.pos, p.look);
+    }
+
+    Object.keys(presetBtns).forEach(key => {
+      if (presetBtns[key]) {
+        presetBtns[key].addEventListener('click', () => setActivePreset(key));
+      }
+    });
+
+    function jumpToAgentStation(agentKey) {
+      setActivePreset(agentKey);
+      const matched = ROSTER.find(a => a.id.toLowerCase() === agentKey.toLowerCase());
+      if (matched) openAgentDossier(matched);
+    }
+
+    document.getElementById('select-agent-jump').addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val) jumpToAgentStation(val);
+    });
+
+    // Apply URL Query Parameters
+    if (envParam && (envParam === 'daylight' || envParam === 'midnight' || envParam === 'sunset')) {
+      renderDynamicEnvironment(envParam);
+      document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
+      const activeEnvBtn = document.getElementById(`btn-env-${envParam}`);
+      if (activeEnvBtn) activeEnvBtn.classList.add('active');
+    }
+
+    const dossierParam = urlParams.get('dossier');
+    const modalParam = urlParams.get('modal');
+
+    if (dossierParam) {
+      const matched = ROSTER.find(a => a.id.toLowerCase() === dossierParam.toLowerCase());
+      if (matched) openAgentDossier(matched);
+    }
+
+    if (modalParam === 'mission' || modalParam === 'board') {
+      missionOverlay.style.display = 'flex';
+    }
+
+    if (viewParam && presets[viewParam]) {
+      autoDriftActive = false;
+      camera.position.set(presets[viewParam].pos.x, presets[viewParam].pos.y, presets[viewParam].pos.z);
+      controls.target.set(presets[viewParam].look.x, presets[viewParam].look.y, presets[viewParam].look.z);
+      controls.update();
+      Object.values(presetBtns).forEach(b => b && b.classList.remove('active'));
+      if (presetBtns[viewParam]) presetBtns[viewParam].classList.add('active');
+    }
+
+    const camXParam = urlParams.get('camX');
+    const camYParam = urlParams.get('camY');
+    const camZParam = urlParams.get('camZ');
+    const lookXParam = urlParams.get('lookX');
+    const lookYParam = urlParams.get('lookY');
+    const lookZParam = urlParams.get('lookZ');
+
+    if (camXParam && camYParam && camZParam) {
+      autoDriftActive = false;
+      camera.position.set(parseFloat(camXParam), parseFloat(camYParam), parseFloat(camZParam));
+      if (lookXParam && lookYParam && lookZParam) {
+        controls.target.set(parseFloat(lookXParam), parseFloat(lookYParam), parseFloat(lookZParam));
+      }
+      controls.update();
+    }
+
+    // 14. Main Render & Animation Loop
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      // Cinematic Inward Drift on Initial Load (starts wider and drifts to comfortable overview)
+      if (autoDriftActive) {
+        autoDriftElapsed += delta;
+        const progress = Math.min(1.0, autoDriftElapsed / autoDriftDuration);
+        const ease = 0.5 - 0.5 * Math.cos(progress * Math.PI);
+
+        camera.position.lerpVectors(initialCamPos, settledCamPos, ease);
+        controls.target.lerpVectors(initialLookAt, settledLookAt, ease);
+
+        if (progress >= 1.0) {
+          autoDriftActive = false;
+          const diag = document.getElementById('hud-diagnostics');
+          if (diag) diag.textContent = 'WebGL 2.0 (Active) | Radial Headquarters Settled | health: see name tags';
+        }
+      }
+
+      // Rotate Central Briefing Hologram Simulation
+      if (tableHoloGroup) {
+        tableHoloGroup.rotation.y += delta * 0.15;
+      }
+
+      // Update independent AnimationMixers
+      globalMixers.forEach(m => m.update(delta));
+
+      // Multi-Agent Activity Locomotion & Posturing
+      const time = clock.getElapsedTime();
+      aiEngineers.update(time);   // PREVIEW: idle animation for the Claude and Gemini androids
+      briefingTable.update(time, delta);   // TABLE PREVIEW
+      liveEvents.update();
+      simVault.update(time);
+      Object.values(agentControllers).forEach((ctrl, i) => {
+        const { agent, model, bones, actions } = ctrl;
+        if (!model || !bones) return;
+
+        let targetPos, targetRot, shouldBeSeated = false;
+        const isReviewer = (agent.id === 'ORCHESTRATOR' || agent.id === 'ANALYST' || agent.id === 'REVIEWER' || agent.id === 'PERFORMANCE');
+        const isBriefing = (agent.id === 'ORCHESTRATOR' || agent.id === 'REQUIREMENTS' || agent.id === 'REVIEWER');
+
+        if (currentActivityMode === 'BOARD_REVIEW' && isReviewer) {
+          targetPos = ctrl.boardPos;
+          targetRot = Math.PI / 2; // Face East towards Command Board
+        } else if (currentActivityMode === 'OWNER_BRIEFING' && isBriefing) {
+          targetPos = ctrl.briefingPos;
+          targetRot = Math.atan2(model.position.x - 0, model.position.z - (-3.8)) + Math.PI; // Face Central Briefing Table
+        } else {
+          targetPos = ctrl.deskPos;
+          targetRot = ctrl.deskRot;
+          shouldBeSeated = true;
+        }
+
+        const distToTarget = model.position.distanceTo(targetPos);
+        const phase = i * 0.7;
+
+        if (distToTarget > 0.25) {
+          // In transit: walk toward destination
+          model.position.lerp(targetPos, 0.06);
+          const dir = new THREE.Vector3().subVectors(targetPos, model.position).normalize();
+          if (dir.lengthSq() > 0.001) {
+            const moveAngle = Math.atan2(dir.x, dir.z);
+            model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, moveAngle, 0.1);
+          }
+          if (ctrl.isSeated) {
+            applyStandingPosture(bones, ctrl.restPose);
+            ctrl.isSeated = false;
+          }
+          if (actions['Walk'] && !actions['Walk'].isRunning()) {
+            if (actions['Idle']) actions['Idle'].stop();
+            actions['Walk'].play();
+          }
+        } else {
+          // Arrived at destination
+          model.position.copy(targetPos);
+          model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, targetRot, 0.1);
+
+          if (shouldBeSeated) {
+            if (actions['Walk'] && actions['Walk'].isRunning()) actions['Walk'].stop();
+            if (actions['Idle'] && actions['Idle'].isRunning()) actions['Idle'].stop();
+
+            if (!ctrl.isSeated) {
+              applySeatedPosture(bones, ctrl.restPose);
+              ctrl.isSeated = true;
+            }
+
+            // Procedural Seated Micro-Motion (Breathing, Glances, Keyboard Flutter)
+            // PREVIEW: scaled by the agent's real activity. Typing only with live evidence of work.
+            const act = aiEngineers.activityOf(agent.id);
+            if (bones['Spine']) bones['Spine'].rotation.x = 0.06 + Math.sin(time * 1.6 + phase) * 0.015 * act.motion;
+            if (bones['Spine1']) bones['Spine1'].rotation.x = 0.04 + Math.sin(time * 1.6 + phase) * 0.010 * act.motion;
+            if (bones['Head']) {
+              bones['Head'].rotation.x = 0.04 + Math.sin(time * 0.8 + phase) * 0.015 * act.motion;
+              bones['Head'].rotation.y = Math.sin(time * 0.5 + phase) * 0.035 * act.motion;
+            }
+            if (bones['LeftForeArm']) bones['LeftForeArm'].rotation.set(SEATED_ARM.fore[0] + Math.sin(time * 6.0 + phase) * 0.025 * act.typing, -SEATED_ARM.fore[1], -SEATED_ARM.fore[2]);
+            if (bones['RightForeArm']) bones['RightForeArm'].rotation.set(SEATED_ARM.fore[0] + Math.cos(time * 5.5 + phase) * 0.025 * act.typing, SEATED_ARM.fore[1], SEATED_ARM.fore[2]);
+          } else {
+            // Standing at Board or Briefing Table
+            if (ctrl.isSeated) {
+              applyStandingPosture(bones, ctrl.restPose);
+              ctrl.isSeated = false;
+            }
+            if (actions['Walk'] && actions['Walk'].isRunning()) actions['Walk'].stop();
+            if (actions['Idle'] && !actions['Idle'].isRunning()) actions['Idle'].play();
+
+            // Procedural Standing Breathing & Head Motion
+            if (bones['Spine']) bones['Spine'].rotation.x = 0.02 + Math.sin(time * 1.5 + phase) * 0.012;
+            if (bones['Head']) {
+              bones['Head'].rotation.x = 0.05 + Math.sin(time * 0.8 + phase) * 0.02;
+              bones['Head'].rotation.y = Math.sin(time * 0.6 + phase) * 0.04;
+            }
+
+            // Pointing / conferring gestures
+            if (currentActivityMode === 'BOARD_REVIEW') {
+              if (bones['RightArm']) bones['RightArm'].rotation.set(0.85, 0, 0.15 + Math.sin(time * 1.5 + phase) * 0.05);
+              if (bones['RightForeArm']) bones['RightForeArm'].rotation.set(-0.35, 0.2, 0);
+            } else if (currentActivityMode === 'OWNER_BRIEFING') {
+              if (bones['LeftArm']) bones['LeftArm'].rotation.set(0.65, 0, -0.2 + Math.sin(time * 1.2 + phase) * 0.05);
+              if (bones['LeftForeArm']) bones['LeftForeArm'].rotation.set(-0.4, -0.2, 0);
+            }
+          }
+        }
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+<script src="./hq_gateway_links.js"></script>
+</body>
+</html>

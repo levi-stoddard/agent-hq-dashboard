@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent HQ — Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Headquarters Extension Styles */
+    .hq-viewport-container {
+      position: relative;
+      background: #0B1118;
+      border: 1px solid #1E293B;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .hq-controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111827;
+      padding: 10px 16px;
+      border-bottom: 1px solid #1F2937;
+    }
+    .view-toggle-btn {
+      background: #1F2937;
+      border: 1px solid #374151;
+      color: #E2E8F0;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .view-toggle-btn.active {
+      background: #0284C7;
+      border-color: #38BDF8;
+      color: #FFFFFF;
+    }
+    #office-canvas {
+      width: 100%;
+      height: 520px;
+      display: block;
+      background: #0B1118;
+    }
+    .blueprint-grid-view {
+      display: none;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      padding: 20px;
+      background: #0B1118;
+    }
+    .blueprint-room-card {
+      background: #111827;
+      border: 1px solid #1F2937;
+      border-radius: 6px;
+      padding: 14px;
+    }
+    .blueprint-room-card h4 {
+      color: #38BDF8;
+      font-size: 13px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    /* Agent Drawer */
+    .agent-drawer {
+      position: absolute;
+      top: 50px;
+      right: 16px;
+      width: 340px;
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid #38BDF8;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 50;
+    }
+    .agent-drawer h3 {
+      color: #F8FAFC;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .agent-drawer .role-tag {
+      font-size: 11px;
+      color: #38BDF8;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #1F2937;
+      font-size: 12px;
+    }
+    .stat-row .stat-label { color: #94A3B8; }
+    .stat-row .stat-val { font-weight: 600; color: #F1F5F9; }
+    /* Meetings Canvas */
+    .meeting-container {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 16px;
+      height: 560px;
+    }
+    .meeting-sidebar {
+      background: #111827;
+      border: 1px solid #1F2937;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .meeting-chat {
+      background: #111827;
+      border: 1px solid #1F2937;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .meeting-history {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-msg {
+      padding: 10px 14px;
+      border-radius: 6px;
+      max-width: 85%;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .chat-msg.owner {
+      background: #1E3A8A;
+      color: #F8FAFC;
+      align-self: flex-end;
+      border: 1px solid #3B82F6;
+    }
+    .chat-msg.agent {
+      background: #1F2937;
+      color: #E2E8F0;
+      align-self: flex-start;
+      border: 1px solid #374151;
+    }
+    .chat-msg .sender-tag {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #38BDF8;
+    }
+    .meeting-input-bar {
+      display: flex;
+      padding: 12px;
+      background: #0B1118;
+      border-top: 1px solid #1F2937;
+      gap: 10px;
+    }
+    .meeting-input-bar input {
+      flex: 1;
+      background: #1F2937;
+      border: 1px solid #374151;
+      color: #F8FAFC;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+    .mic-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .mic-live {
+      background: #7F1D1D;
+      color: #FCA5A5;
+      border: 1px solid #DC2626;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    /* Event Timeline */
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .timeline-item {
+      background: #111827;
+      border: 1px solid #1F2937;
+      border-left: 4px solid #38BDF8;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Bar -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="logo-badge">ORCHESTRATOR</div>
+        <div class="brand-text">
+          <h1>AGENT HQ</h1>
+          <span class="sub">ACME WIDGETS AI ENGINEERING TEAM (FICTIONAL SAMPLE DATA) &bull; <code>TEAM: 9 AGENTS</code></span>
+        </div>
+      </div>
+      <div class="mission-meta">
+        <div class="meta-item">
+          <span class="lbl">OWNERS</span>
+          <span class="val">Owner A &amp; Owner B (Equal Authority)</span>
+        </div>
+        <div class="meta-item">
+          <span class="lbl">OPERATIONAL HEALTH</span>
+          <span class="badge badge-healthy" id="hq-health-badge">HEALTHY (100%)</span>
+        </div>
+        <div class="meta-item">
+          <span class="lbl">ORCHESTRATOR</span>
+          <span class="val-code">ORCHESTRATOR (CTO)</span>
+        </div>
+        <div class="meta-item">
+          <span class="lbl">RED-TEAM AUDITOR</span>
+          <span class="badge verified">REVIEWER (Claude)</span>
+        </div>
+        <div class="meta-item">
+          <span class="lbl">QUALITY ENGINE</span>
+          <span class="badge running">QUALITY (Active)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="virtual-hq">Virtual Floor Plan (2.5D / Blueprint)</button>
+      <button class="tab-btn" data-tab="team">Engineering Team (9 Agents)</button>
+      <button class="tab-btn" data-tab="meetings">Interactive Meetings &amp; Voice</button>
+      <button class="tab-btn" data-tab="learning">Learning &amp; Quality</button>
+      <button class="tab-btn" data-tab="owner-cmd">Owner Command Center</button>
+      <button class="tab-btn" data-tab="timeline">Activity Timeline &amp; Events</button>
+      <button class="tab-btn" data-tab="briefing">Daily Engineering Briefing</button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-panel">
+      
+      <!-- TAB 1: Virtual Headquarters Floor Plan (2.5D / Blueprint) -->
+      <section id="tab-virtual-hq" class="tab-content active">
+        <div class="hq-viewport-container">
+          <div class="hq-controls-bar">
+            <div>
+              <strong style="color: #38BDF8; font-size: 13px;">VIRTUAL HEADQUARTERS FLOOR PLAN</strong>
+              <span style="color: #94A3B8; font-size: 11px; margin-left: 10px;">2.5D Canvas &amp; 2D Blueprint Grid &bull; Interactive Workstations &amp; Telemetry</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <a href="/prototype3d.html" class="view-toggle-btn" style="text-decoration: none; display: flex; align-items: center; background: linear-gradient(135deg, #0A192F 0%, #0F2D54 100%); border: 1.5px solid #D4AF37; color: #D4AF37; font-weight: 800; box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);" title="Open the WebGL 3D headquarters">✨ 3D Headquarters</a>
+              <button class="view-toggle-btn" id="btn-open-cmd-board" style="background: #0284C7; border-color: #38BDF8; color: #FFFFFF; font-weight: 700;">&#9776; Command Board</button>
+              <button class="view-toggle-btn active" id="btn-toggle-3d">2.5D Schematic (Fallback)</button>
+              <button class="view-toggle-btn" id="btn-toggle-2d">2D Blueprint Grid</button>
+            </div>
+          </div>
+
+          <!-- 2.5D Isometric Canvas Floor Plan -->
+          <canvas id="office-canvas"></canvas>
+
+          <!-- 2D Blueprint Grid Fallback -->
+          <div id="blueprint-grid" class="blueprint-grid-view">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Slide-out Agent Inspector Drawer -->
+          <div id="agent-drawer" class="agent-drawer">
+            <button id="close-drawer-btn" style="float: right; background: none; border: none; color: #94A3B8; cursor: pointer;">&times;</button>
+            <h3 id="drawer-agent-name">Orchestrator</h3>
+            <span class="role-tag" id="drawer-agent-role">Engineering orchestrator</span>
+            <p id="drawer-agent-summary" style="font-size: 11px; color: #CBD5E1; margin-bottom: 12px; line-height: 1.4;"></p>
+            
+            <div class="stat-row">
+              <span class="stat-label">Engineering Effectiveness</span>
+              <span class="stat-val" id="drawer-agent-ees">INSUFFICIENT DATA</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Operational Health</span>
+              <span class="stat-val" id="drawer-agent-ohs">ONLINE_IDLE</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Assigned Model</span>
+              <span class="stat-val" id="drawer-agent-model">gemini-flash</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Independent Reviewer</span>
+              <span class="stat-val" id="drawer-agent-reviewer">REVIEWER (Claude)</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Room / Workstation</span>
+              <span class="stat-val" id="drawer-agent-room">CTO Command Office</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Engineering Team Registry -->
+      <section id="tab-team" class="tab-content">
+        <h2 style="color: #F8FAFC; margin-bottom: 16px;">Engineering Team (9 Agents)</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;" id="team-cards-container">
+          <!-- Populated dynamically via /api/agents -->
+        </div>
+      </section>
+
+      <!-- TAB 3: Interactive Meetings & Voice -->
+      <section id="tab-meetings" class="tab-content">
+        <div class="meeting-container">
+          <div class="meeting-sidebar">
+            <h4 style="color: #38BDF8; font-size: 13px; margin-bottom: 12px;">MEETING CONTROLS</h4>
+            
+            <label style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 4px;">TARGET AGENT</label>
+            <select id="meeting-agent-select" style="width: 100%; background: #1F2937; border: 1px solid #374151; color: #FFF; padding: 6px; border-radius: 4px; margin-bottom: 16px;">
+              <option value="ORCHESTRATOR">ORCHESTRATOR (Coordination)</option>
+              <option value="ANALYST">ANALYST (Research &amp; Analysis)</option>
+              <option value="PERFORMANCE">PERFORMANCE (Size, Boot Time &amp; Battery)</option>
+              <option value="VERIFICATION">VERIFICATION (Hardware-in-the-Loop Tests)</option>
+              <option value="INTEGRATION">INTEGRATION (Wi-Fi, App &amp; Cloud)</option>
+              <option value="IMPLEMENTER">IMPLEMENTER (Firmware Features)</option>
+              <option value="REQUIREMENTS">REQUIREMENTS (Traceability)</option>
+              <option value="REVIEWER">REVIEWER (Independent Review)</option>
+              <option value="QUALITY">QUALITY (Lessons &amp; Regressions)</option>
+            </select>
+
+            <h4 style="color: #38BDF8; font-size: 13px; margin-bottom: 8px;">VOICE CAPABILITIES</h4>
+            <div style="margin-bottom: 12px;">
+              <span class="mic-status-badge" id="mic-status-indicator" style="background: #1F2937; color: #94A3B8;">MIC OFF (READY)</span>
+            </div>
+            
+            <button id="btn-ptt-mic" class="view-toggle-btn" style="width: 100%; margin-bottom: 8px;">Push-To-Talk (Hold)</button>
+            <button id="btn-handsfree-toggle" class="view-toggle-btn" style="width: 100%; margin-bottom: 8px;">Toggle Hands-Free Mode</button>
+            <button id="btn-mute-emergency" class="view-toggle-btn" style="width: 100%; background: #7F1D1D; border-color: #DC2626; color: #FEE2E2;">Emergency Mute (Esc)</button>
+          </div>
+
+          <div class="meeting-chat">
+            <div class="meeting-history" id="meeting-history-box">
+              <div class="chat-msg agent">
+                <div class="sender-tag">ORCHESTRATOR (CTO)</div>
+                Orchestrator standing by (fixed template answers, fictional data). The team is in the Conference Room. Ask questions to any specialist or convene a technical roundtable.
+              </div>
+            </div>
+            <div class="meeting-input-bar">
+              <input type="text" id="meeting-input-field" placeholder="Ask a question (e.g. Performance, what is the idle current?)...">
+              <button class="view-toggle-btn active" id="btn-send-meeting">Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: Learning & Quality Center -->
+      <section id="tab-learning" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="color: #F8FAFC; margin: 0;">Learning &amp; Regression Engine</h2>
+          <button class="view-toggle-btn active" id="btn-run-regressions">Run Regression Test Suite</button>
+        </div>
+
+        <div id="regression-summary-card" class="telemetry-strip" style="display: none; margin-bottom: 16px;">
+          <strong style="color: #34D399; font-size: 14px;">REGRESSION TEST RESULTS</strong>
+          <p id="reg-summary-text" style="color: #CBD5E1; font-size: 12px; margin-top: 6px;"></p>
+        </div>
+
+        <h3 style="color: #38BDF8; font-size: 14px; margin-bottom: 10px;">VERIFIED LESSONS (sample-state/lessons.json)</h3>
+        <table class="task-table" id="lessons-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Root Cause</th>
+              <th>Status</th>
+              <th>Regression Test File</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="lessons-table-body">
+            <!-- Populated via /api/lessons -->
+          </tbody>
+        </table>
+      </section>
+
+      <!-- TAB 5: Owner Command Center -->
+      <section id="tab-owner-cmd" class="tab-content">
+        <h2 style="color: #F8FAFC; margin-bottom: 16px;">Owner Command Center &amp; Security Gate</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          
+          <div class="telemetry-strip">
+            <h3 style="color: #38BDF8; font-size: 14px; margin-bottom: 12px;">ACTION AUTHORIZATION GATE (Class 3 Protected)</h3>
+            <p style="font-size: 12px; color: #94A3B8; margin-bottom: 12px;">Selecting a name in a dropdown does NOT grant authority. Protected actions (modifying baselines, adding permanent agents, financial commitments) require explicit confirmation.</p>
+            
+            <label style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 4px;">CHALLENGE ID</label>
+            <input type="text" id="auth-challenge-id" placeholder="e.g. AUTH-STUB-1" style="width: 100%; background: #1F2937; border: 1px solid #374151; color: #FFF; padding: 6px; border-radius: 4px; margin-bottom: 12px;">
+            
+            <label style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 4px;">SIGNING OWNER</label>
+            <select id="auth-owner-select" style="width: 100%; background: #1F2937; border: 1px solid #374151; color: #FFF; padding: 6px; border-radius: 4px; margin-bottom: 12px;">
+              <option value="OWNER_A">Owner A</option>
+              <option value="OWNER_B">Owner B</option>
+            </select>
+
+            <button class="view-toggle-btn active" id="btn-submit-auth" style="width: 100%;">Sign &amp; Authorize Action</button>
+            <div id="auth-feedback" style="margin-top: 10px; font-size: 12px;"></div>
+          </div>
+
+          <div class="telemetry-strip">
+            <h3 style="color: #38BDF8; font-size: 14px; margin-bottom: 12px;">OWNER NOTIFICATION PREFERENCES</h3>
+            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+              <button class="view-toggle-btn active" id="btn-pref-owner_a">Owner A Preferences</button>
+              <button class="view-toggle-btn" id="btn-pref-owner_b">Owner B Preferences</button>
+            </div>
+            <div id="pref-details-box" style="font-size: 12px; color: #CBD5E1; line-height: 1.6;">
+              <!-- Populated via /api/owner/preferences -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB 6: Historical Timeline -->
+      <section id="tab-timeline" class="tab-content">
+        <h2 style="color: #F8FAFC; margin-bottom: 16px;">Complete Chronological Event Store (events.jsonl)</h2>
+        <div class="timeline-list" id="timeline-events-container">
+          <!-- Populated via /api/events -->
+        </div>
+      </section>
+
+      <!-- TAB 7: Daily Briefing -->
+      <section id="tab-briefing" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="color: #F8FAFC; margin: 0;">Daily Engineering Briefing</h2>
+          <button class="view-toggle-btn active" id="btn-refresh-briefing">Regenerate Synthesis</button>
+        </div>
+        <div class="telemetry-strip" style="background: #111827; white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; line-height: 1.6; color: #E2E8F0;" id="briefing-content-box">
+          Loading daily briefing...
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Engineering Command Board Modal -->
+  <div id="command-board-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(11, 17, 24, 0.88); backdrop-filter: blur(8px); z-index: 100; overflow-y: auto; padding: 20px;">
+    <div style="max-width: 1200px; margin: 30px auto; background: #111827; border: 1px solid #0284C7; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow: hidden;">
+      <!-- Command Board Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #0F172A; padding: 14px 20px; border-bottom: 1px solid #1E293B;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="background: #0284C7; color: #FFF; font-weight: 800; font-size: 11px; padding: 4px 8px; border-radius: 4px;">HQ-CMD-BOARD</span>
+          <h2 style="margin: 0; font-size: 16px; color: #F8FAFC;">Engineering Command Board</h2>
+          <span style="font-size: 12px; color: #94A3B8;">&bull; Linear, GitHub &amp; Agent Dispatch</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="view-toggle-btn active" id="btn-modal-new-task">+ New Task</button>
+          <button class="view-toggle-btn" id="btn-modal-sync-reconcile">&#8635; Sync Reconcile</button>
+          <button class="view-toggle-btn" id="btn-modal-emergency-freeze" style="border-color: #DC2626; color: #FCA5A5;">&#9888; Emergency Freeze</button>
+          <button class="view-toggle-btn" id="btn-close-cmd-board" style="background: #1F2937;">&times; Close (Esc)</button>
+        </div>
+      </div>
+
+      <!-- Controls & Filter Bar -->
+      <div style="padding: 12px 20px; background: #111827; border-bottom: 1px solid #1F2937; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <input type="text" id="cmd-search-input" placeholder="Search tasks, jobs, or objectives..." style="flex: 1; min-width: 200px; background: #1F2937; border: 1px solid #374151; color: #F8FAFC; padding: 8px 12px; border-radius: 4px; font-size: 12px;" />
+        <select id="cmd-filter-agent" style="background: #1F2937; border: 1px solid #374151; color: #E2E8F0; padding: 8px; border-radius: 4px; font-size: 12px;">
+          <option value="">Agent: All</option>
+          <option value="ANALYST">Analyst (Research)</option>
+          <option value="PERFORMANCE">Performance (Power)</option>
+          <option value="INTEGRATION">Integration (Connectivity)</option>
+          <option value="IMPLEMENTER">Implementer (Firmware)</option>
+          <option value="VERIFICATION">Verification (Testing)</option>
+          <option value="LINEAR_AGENT">Linear agent</option>
+          <option value="GITHUB_AGENT">GitHub agent</option>
+          <option value="ORCHESTRATOR">Orchestrator</option>
+        </select>
+        <select id="cmd-filter-priority" style="background: #1F2937; border: 1px solid #374151; color: #E2E8F0; padding: 8px; border-radius: 4px; font-size: 12px;">
+          <option value="">Priority: All</option>
+          <option value="URGENT">Urgent</option>
+          <option value="HIGH">High</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+        <select id="cmd-filter-source" style="background: #1F2937; border: 1px solid #374151; color: #E2E8F0; padding: 8px; border-radius: 4px; font-size: 12px;">
+          <option value="ALL">Source: All</option>
+          <option value="LOCAL">Local Only</option>
+          <option value="LINEAR">Linear Linked</option>
+          <option value="GITHUB">GitHub Linked</option>
+        </select>
+        <button class="view-toggle-btn" id="btn-refresh-jobs">&#8634; Refresh</button>
+      </div>
+
+      <!-- Command Board Kanban Grid -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 20px; background: #0B1118; min-height: 480px;">
+        <!-- Column 1: Queued / Backlog -->
+        <div style="background: #111827; border: 1px solid #1F2937; border-radius: 6px; padding: 12px; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #38BDF8; margin-bottom: 10px; border-bottom: 1px solid #1F2937; padding-bottom: 6px;">
+            <span>QUEUED / BACKLOG</span>
+            <span id="count-queued">0</span>
+          </div>
+          <div id="col-queued" style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Column 2: In Progress -->
+        <div style="background: #111827; border: 1px solid #1F2937; border-radius: 6px; padding: 12px; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #F59E0B; margin-bottom: 10px; border-bottom: 1px solid #1F2937; padding-bottom: 6px;">
+            <span>IN PROGRESS</span>
+            <span id="count-inprogress">0</span>
+          </div>
+          <div id="col-inprogress" style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Column 3: Blocked / Pending Approval -->
+        <div style="background: #111827; border: 1px solid #1F2937; border-radius: 6px; padding: 12px; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #EF4444; margin-bottom: 10px; border-bottom: 1px solid #1F2937; padding-bottom: 6px;">
+            <span>BLOCKED / APPROVAL REQ</span>
+            <span id="count-blocked">0</span>
+          </div>
+          <div id="col-blocked" style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Column 4: Completed & Verified -->
+        <div style="background: #111827; border: 1px solid #1F2937; border-radius: 6px; padding: 12px; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #10B981; margin-bottom: 10px; border-bottom: 1px solid #1F2937; padding-bottom: 6px;">
+            <span>COMPLETED &amp; VERIFIED</span>
+            <span id="count-completed">0</span>
+          </div>
+          <div id="col-completed" style="display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Task Intake Modal -->
+  <div id="new-task-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(11, 17, 24, 0.88); backdrop-filter: blur(8px); z-index: 150; padding: 20px; overflow-y: auto;">
+    <div style="max-width: 640px; margin: 50px auto; background: #111827; border: 1px solid #38BDF8; border-radius: 8px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #1F2937; padding-bottom: 10px;">
+        <h3 style="margin: 0; color: #F8FAFC; font-size: 15px;">Create New Engineering Task</h3>
+        <button id="btn-close-new-task-modal" style="background: none; border: none; color: #94A3B8; font-size: 18px; cursor: pointer;">&times;</button>
+      </div>
+      <form id="form-create-task" style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="display: block; font-size: 11px; color: #94A3B8; margin-bottom: 4px;">Task Title *</label>
+          <input type="text" id="input-task-title" required placeholder="e.g. Measure idle current on the rev C board" style="width: 100%; box-sizing: border-box; background: #1F2937; border: 1px solid #374151; color: #F8FAFC; padding: 8px 10px; border-radius: 4px; font-size: 12px;" />
+        </div>
+        <div>
+          <label style="display: block; font-size: 11px; color: #94A3B8; margin-bottom: 4px;">Engineering Objective (Acceptance Criteria) *</label>
+          <textarea id="input-task-objective" required placeholder="State measurable criteria or test conditions..." style="width: 100%; box-sizing: border-box; min-height: 60px; background: #1F2937; border: 1px solid #374151; color: #F8FAFC; padding: 8px 10px; border-radius: 4px; font-size: 12px;"></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="display: block; font-size: 11px; color: #94A3B8; margin-bottom: 4px;">Priority</label>
+            <select id="input-task-priority" style="width: 100%; box-sizing: border-box; background: #1F2937; border: 1px solid #374151; color: #F8FAFC; padding: 8px; border-radius: 4px; font-size: 12px;">
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; color: #94A3B8; margin-bottom: 4px;">Domain Routing</label>
+            <select id="input-task-domain" style="width: 100%; box-sizing: border-box; background: #1F2937; border: 1px solid #374151; color: #F8FAFC; padding: 8px; border-radius: 4px; font-size: 12px;">
+              <option value="AUTO_CLASSIFY" selected>Auto-Classify (Orchestrator)</option>
+              <option value="SENSOR_RESEARCH">Sensor research (Analyst)</option>
+              <option value="POWER">Power (Performance)</option>
+              <option value="CONNECTIVITY">Connectivity (Integration)</option>
+              <option value="FIRMWARE">Firmware (Implementer)</option>
+              <option value="TESTING">Testing (Verification)</option>
+              <option value="LINEAR_OPERATIONS">Linear (Linear agent)</option>
+              <option value="GITHUB_INTELLIGENCE">GitHub (GitHub agent)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+          <button type="button" class="view-toggle-btn" id="btn-cancel-create-task" style="background: #1F2937;">Cancel</button>
+          <button type="submit" class="view-toggle-btn active" style="background: #0284C7;">Create &amp; Route Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="office3d.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+

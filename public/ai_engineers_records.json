@@ -1,0 +1,90 @@
+{
+  "as_of": "2026-10-20T16:00:00Z",
+  "kind": "STATIC SAMPLE. Fictional Acme Widgets data written for the public copy. Not live.",
+  "written_by": "sample data",
+  "engineers": {
+    "CLAUDE": {
+      "identity": "Claude Code session (sample)",
+      "role": "Acting engineering coordinator",
+      "state": "NO_LIVE_LINK",
+      "state_basis": "This page cannot see whether a Claude session is running. It shows the last sample record only.",
+      "last_record": {
+        "title": "Schedule engine refactor: tests written",
+        "status": "READY_FOR_REVIEW (sample)",
+        "at": "2026-10-20T15:30:00Z",
+        "detail": "24 tests written and run by the author: 24 passed. Not independently reviewed yet."
+      },
+      "assignments": [
+        {
+          "title": "Schedule engine refactor (JOB-ACME-103)",
+          "status": "AUTHOR-TESTED / REVIEW PENDING"
+        },
+        {
+          "title": "Agent HQ: Claude and Gemini workstations",
+          "status": "DONE (sample)"
+        }
+      ],
+      "figures": [
+        {
+          "value": "24 / 24",
+          "label": "schedule tests passed (author-run)"
+        },
+        {
+          "value": "0",
+          "label": "independent reviews so far"
+        }
+      ],
+      "evidence": [
+        {
+          "label": "Test report (sample path)",
+          "path": "firmware/tests/report_schedule.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "present": false
+        }
+      ],
+      "notes": [
+        "Not an autonomous agent. Each session is started and directed by an owner.",
+        "This station does not show live activity and cannot start, stop or instruct a session."
+      ]
+    },
+    "GEMINI": {
+      "identity": "Gemini API worker (sample), proposal mode",
+      "role": "Supervised engineering worker (proposal-only)",
+      "state": "PAUSED",
+      "state_basis": "Paused by the owners to save API credits (sample). No request can be sent without a person starting one.",
+      "last_record": {
+        "title": "Proposed a fix for a unit test in the sample firmware",
+        "status": "READY_FOR_REVIEW (sample)",
+        "at": "2026-10-19T13:00:00Z",
+        "detail": "3 API requests (sample figures). A person reviewed and applied the change."
+      },
+      "assignments": [
+        {
+          "title": "Sensor unit-conversion test fix",
+          "status": "DONE (supervised, sample)"
+        }
+      ],
+      "figures": [
+        {
+          "value": "3",
+          "label": "API requests (sample)"
+        },
+        {
+          "value": "$0.00",
+          "label": "cost (sample)"
+        }
+      ],
+      "evidence": [
+        {
+          "label": "Request receipts (sample path)",
+          "path": "worker-bridge/receipts/sample.jsonl",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "present": false
+        }
+      ],
+      "notes": [
+        "Proposal-only: it cannot change files by itself."
+      ]
+    }
+  }
+}

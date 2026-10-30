@@ -1,0 +1,220 @@
+{
+  "as_of": "2026-10-20T16:00:00Z",
+  "kind": "STATIC SAMPLE. Fictional Acme Widgets thermostat data. Not live.",
+  "written_by": "sample data",
+  "components": {
+    "SENSOR": {
+      "name": "Temperature and humidity sensor",
+      "role": "Measures room conditions",
+      "placement": "Front lower edge, away from the display heat.",
+      "requirements": [
+        {
+          "id": "REQ-01",
+          "text": "Accuracy within 0.3 C from 10 to 35 C."
+        }
+      ],
+      "status": [
+        {
+          "k": "Candidate parts",
+          "v": "2 under comparison"
+        },
+        {
+          "k": "Decision",
+          "v": "OPEN"
+        }
+      ],
+      "open": [
+        "30-day soak test not started."
+      ],
+      "sources": [
+        {
+          "label": "Sensor comparison",
+          "path": "docs/sample/sensor_comparison.md",
+          "present": false
+        }
+      ]
+    },
+    "DISPLAY": {
+      "name": "Round display",
+      "role": "Shows the setpoint and schedule",
+      "placement": "Centre of the front face.",
+      "requirements": [
+        {
+          "id": "REQ-07",
+          "text": "Readable from 3 m in daylight."
+        }
+      ],
+      "status": [
+        {
+          "k": "Prototype",
+          "v": "Built"
+        },
+        {
+          "k": "Daylight test",
+          "v": "PASS (sample)"
+        }
+      ],
+      "open": [],
+      "sources": [
+        {
+          "label": "Display notes",
+          "path": "docs/sample/display_notes.md",
+          "present": false
+        }
+      ]
+    },
+    "MCU": {
+      "name": "Microcontroller",
+      "role": "Runs the thermostat firmware",
+      "placement": "Main board, behind the display.",
+      "requirements": [
+        {
+          "id": "REQ-12",
+          "text": "Firmware fits in 512 KB flash with 20% spare."
+        }
+      ],
+      "status": [
+        {
+          "k": "Flash used",
+          "v": "61% (sample)"
+        }
+      ],
+      "open": [],
+      "sources": [
+        {
+          "label": "Firmware size report",
+          "path": "docs/sample/firmware_size_report.md",
+          "present": false
+        }
+      ]
+    },
+    "RADIO": {
+      "name": "Wi-Fi radio",
+      "role": "Connects to the home network and app",
+      "placement": "Main board, top edge.",
+      "requirements": [
+        {
+          "id": "REQ-15",
+          "text": "Pairs with the app in under 60 s."
+        }
+      ],
+      "status": [
+        {
+          "k": "Pairing",
+          "v": "IN PROGRESS"
+        }
+      ],
+      "open": [
+        "App team dependency."
+      ],
+      "sources": [
+        {
+          "label": "Integration notes",
+          "path": "docs/sample/integration_notes.md",
+          "present": false
+        }
+      ]
+    },
+    "BATTERY": {
+      "name": "Backup battery",
+      "role": "Keeps the clock and schedule during power cuts",
+      "placement": "Rear cover.",
+      "requirements": [
+        {
+          "id": "REQ-20",
+          "text": "Holds the schedule for 72 hours without mains power."
+        }
+      ],
+      "status": [
+        {
+          "k": "Idle current",
+          "v": "18 uA (sample)"
+        }
+      ],
+      "open": [],
+      "sources": [
+        {
+          "label": "Power profile",
+          "path": "docs/sample/power_profile.md",
+          "present": false
+        }
+      ]
+    }
+  },
+  "mission": [
+    {
+      "id": "JOB-ACME-103",
+      "title": "Schedule engine refactor",
+      "status": "IN PROGRESS",
+      "recorded_utc": "2026-10-20T15:30:00Z",
+      "facts": [
+        {
+          "k": "Tests",
+          "v": "24 / 24 passed (author-run)"
+        },
+        {
+          "k": "Review",
+          "v": "PENDING"
+        }
+      ],
+      "candidates": [
+        {
+          "name": "15-minute slots",
+          "acquisition": "chosen",
+          "recording": "n/a",
+          "physical": "bench tested"
+        },
+        {
+          "name": "30-minute slots",
+          "acquisition": "rejected",
+          "recording": "n/a",
+          "physical": "not tested"
+        }
+      ],
+      "blockers": [
+        "Independent review not done yet."
+      ],
+      "sources": [
+        {
+          "label": "Job record",
+          "path": "sample-state/jobs.json",
+          "present": true
+        }
+      ]
+    }
+  ],
+  "owner": {
+    "authority": "Owner A and Owner B have equal authority. This table is read-only; approvals happen in the approval workflow.",
+    "board_url": "",
+    "board_snapshot_utc": "2026-10-20T16:00:00Z",
+    "decisions": [
+      {
+        "id": "DEC-ACME-01",
+        "title": "Change the default setpoint range",
+        "question": "Move the default range from 10-30 C to 12-28 C?",
+        "status": "OPEN",
+        "required_reviewer": "Owner",
+        "raised_utc": "2026-10-20T15:05:00Z",
+        "owner_decision": null
+      }
+    ],
+    "engineering_open": [
+      {
+        "title": "Pair the thermostat with the mobile app",
+        "state": "AWAITING OWNERS",
+        "ref": "JOB-ACME-106"
+      }
+    ],
+    "brief_items": {
+      "note": "Sample items from the weekly owner brief.",
+      "items": [
+        {
+          "title": "Release candidate in two weeks",
+          "owner": "ORCHESTRATOR",
+          "ref": "sample brief",
+          "next": "Confirm scope"
+        }
+      ]
+    }
+  }
+}

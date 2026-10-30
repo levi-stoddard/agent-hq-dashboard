@@ -1,0 +1,203 @@
+{
+  "schema": "ahq.hq.shared_stations.v1",
+  "source": "Sample list (fictional) in the shape of the Unreal ahq_stations.json",
+  "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "gateway_base": "http://127.0.0.1:8892",
+  "note": "Web 3D desks open these gateway pages; nothing here approves anything.",
+  "stations": [
+    {
+      "id": "mission_control",
+      "title": "MISSION CONTROL",
+      "subtitle": "Kiosk",
+      "web3d_target": "mission_control",
+      "gateway_pages": [
+        {
+          "label": "Mission Control kiosk: the live dashboard (all pages)",
+          "path": "/app/",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Engineering progress",
+          "path": "/app/#board",
+          "unreal_kind": "explorer"
+        },
+        {
+          "label": "Agents and systems",
+          "path": "/app/#agents",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": [
+        {
+          "label": "Orchestrator dashboard",
+          "service": "hq",
+          "path": "/index.html"
+        }
+      ]
+    },
+    {
+      "id": "owner_a",
+      "title": "OWNER A",
+      "subtitle": "Private workspace: sign in as Owner A",
+      "web3d_target": "owner_dais_owner_a",
+      "gateway_pages": [
+        {
+          "label": "My assistant",
+          "path": "/app/#assistant",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Full dashboard (all pages)",
+          "path": "/app/",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Engineering work (orchestrator bridge)",
+          "path": "/app/orchestrator-bridge-work.html",
+          "unreal_kind": null
+        },
+        {
+          "label": "Sign in / account",
+          "path": "/app/#account",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": [
+        {
+          "label": "Status Board",
+          "service": "board",
+          "path": "/"
+        }
+      ]
+    },
+    {
+      "id": "owner_b",
+      "title": "OWNER B",
+      "subtitle": "Private workspace: sign in as Owner B",
+      "web3d_target": "owner_dais_owner_b",
+      "gateway_pages": [
+        {
+          "label": "My assistant",
+          "path": "/app/#assistant",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Full dashboard (all pages)",
+          "path": "/app/",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Engineering work (orchestrator bridge)",
+          "path": "/app/orchestrator-bridge-work.html",
+          "unreal_kind": null
+        },
+        {
+          "label": "Sign in / account",
+          "path": "/app/#account",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": [
+        {
+          "label": "Status Board",
+          "service": "board",
+          "path": "/"
+        }
+      ]
+    },
+    {
+      "id": "sim",
+      "title": "SIMULATION VAULT",
+      "subtitle": "Simulation library",
+      "web3d_target": "simulation_vault",
+      "gateway_pages": [
+        {
+          "label": "Simulation registry",
+          "path": "/app/#vault",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Verification evidence",
+          "path": "/app/#verification",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": []
+    },
+    {
+      "id": "orchestrator",
+      "title": "ORCHESTRATOR",
+      "subtitle": "Engineering coordination",
+      "web3d_target": "orchestrator",
+      "gateway_pages": [
+        {
+          "label": "Coordination status",
+          "path": "/app/#agents",
+          "unreal_kind": "LIVE"
+        },
+        {
+          "label": "Engineering progress",
+          "path": "/app/#board",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": []
+    },
+    {
+      "id": "implementer",
+      "title": "IMPLEMENTER",
+      "subtitle": "Engineering implementation",
+      "web3d_target": "implementer",
+      "gateway_pages": [
+        {
+          "label": "Task and evidence status",
+          "path": "/app/#verification",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": []
+    },
+    {
+      "id": "reviewer",
+      "title": "REVIEWER",
+      "subtitle": "Independent review",
+      "web3d_target": "reviewer",
+      "gateway_pages": [
+        {
+          "label": "Review status and verdicts",
+          "path": "/app/#verification",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": []
+    },
+    {
+      "id": "analyst",
+      "title": "ANALYST",
+      "subtitle": "Research and analysis  ·  NOT LIVE",
+      "web3d_target": "analyst",
+      "gateway_pages": [
+        {
+          "label": "Roster and restrictions",
+          "path": "/app/#agents",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": []
+    },
+    {
+      "id": "claude",
+      "title": "CLAUDE",
+      "subtitle": "Independent AI engineer  ·  NOT CONNECTED",
+      "web3d_target": "claude",
+      "gateway_pages": [
+        {
+          "label": "Engineering progress",
+          "path": "/app/#board",
+          "unreal_kind": "LIVE"
+        }
+      ],
+      "other_pages_in_unreal": []
+    }
+  ]
+}
