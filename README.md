@@ -88,4 +88,4 @@ This is what the code does, not more:
 
 ## License
 
-MIT, see `LICENSE`. Written by Levi Stoddard. three.js is included under its own MIT licence (see `THIRD_PARTY.md`).
+Copyright (c) 2026 Levi Stoddard. All rights reserved. The source is published for portfolio review only; using, copying, modifying or distributing it needs my written permission. See [LICENSE](LICENSE). Written by Levi Stoddard. three.js is included under its own MIT licence (see `THIRD_PARTY.md`).
